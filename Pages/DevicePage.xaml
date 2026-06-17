@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:MAUI_IOT.Models"
+             x:Class="MAUI_IOT.Pages.DevicePage"
+             Title="Devices">
+    <Grid Padding="20" RowDefinitions ="Auto, Auto, *" RowSpacing="16">
+        <VerticalStackLayout Spacing="4">
+            <Label Text="IoT Devices" FontSize="32" FontAttributes="Bold" />
+            <Label Text="Mock data now. TODO API later"/>
+        </VerticalStackLayout>
+        <Button Grid.Row="1" Text="Refresh Devices" Command="{Binding LoadDevicesCommand}" />
+
+        <CollectionView Grid.Row="2" ItemsSource="{Binding Devices}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:DeviceSummary">
+                    <Border Margin="0,0,0,12" Padding="16" StrokeThickness="1">
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="{Binding Name}" FontSize="20" FontAttributes="Bold" />
+                            <Label Text="{Binding Type}" TextColor="Gray"   />
+                            <Label Text="{Binding LatestReading}" FontSize="18"/>
+                            <Label Text="{Binding IsOnline, StringFormat='Online: {0}'}" />
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+        
+        
+        
+    </Grid>
+</ContentPage>

@@ -21,7 +21,11 @@ namespace MAUI_IOT.PageModels
         [ObservableProperty]
         private bool isBusy;
         [ObservableProperty]
+        private bool isRefreshing;
+        [ObservableProperty]
         private string? errorMessage;
+        [ObservableProperty]
+        private string lastUpdated = "Last updated --";
 
         public bool HasSensors => Sensors.Count > 0;
         public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
@@ -44,6 +48,7 @@ namespace MAUI_IOT.PageModels
                 {
                     Sensors.Add(sensor);
                 }
+                LastUpdated = $"Last updated {DateTime.Now:HH:mm}";
                 NotifySensorStateChanged();
             }
             catch (Exception ex)
@@ -54,6 +59,7 @@ namespace MAUI_IOT.PageModels
             finally
             {
                 IsBusy = false;
+                IsRefreshing = false;
                 NotifySensorStateChanged();
             }
         }

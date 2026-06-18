@@ -3,10 +3,10 @@ using MAUI_IOT.PageModels;
 namespace MAUI_IOT.Pages;
 
 
-public partial class DevicePage : ContentPage
+public partial class SensorsPage : ContentPage
 {
-	private readonly DevicesPageModel _pageModel;
-    public DevicePage(DevicesPageModel pageModel)
+	private readonly SensorsPageModel _pageModel;
+    public SensorsPage(SensorsPageModel pageModel)
 	{
         InitializeComponent();
 		_pageModel = pageModel;
@@ -16,6 +16,6 @@ public partial class DevicePage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await _pageModel.LoadDevicesCommand.ExecuteAsync(null);
+        await _pageModel.LoadSensorsCommand.ExecuteAsync(null);
     }
 }

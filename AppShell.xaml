@@ -5,11 +5,26 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:MAUI_IOT"
     xmlns:pages="clr-namespace:MAUI_IOT.Pages"
-    Title="MAUI_IOT">
+    Title="MAUI_IOT"
+    Shell.BackgroundColor="{StaticResource CardBackground}"
+    Shell.ForegroundColor="{StaticResource TextPrimary}"
+    Shell.TitleColor="{StaticResource TextPrimary}"
+    Shell.TabBarBackgroundColor="{StaticResource CardBackground}"
+    Shell.TabBarForegroundColor="{StaticResource TextMuted}"
+    Shell.TabBarTitleColor="{StaticResource TextMuted}"
+    Shell.TabBarUnselectedColor="{StaticResource TextMuted}"
+    Shell.TabBarDisabledColor="{StaticResource Gray300}">
 
-    <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate pages:DevicePage}"
-        Route="MainPage" />
+    <TabBar>
+        <ShellContent
+            Title="Dashboard"
+            ContentTemplate="{DataTemplate pages:DashboardPage}"
+            Route="dashboard" />
+
+        <ShellContent
+            Title="Sensors"
+            ContentTemplate="{DataTemplate pages:SensorsPage}"
+            Route="sensors" />
+    </TabBar>
 
 </Shell>

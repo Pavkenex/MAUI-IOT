@@ -21,9 +21,13 @@ namespace MAUI_IOT
     		builder.Logging.AddDebug();
 #endif
 
-            builder.Services.AddSingleton<IDeviceDataService, MockDeviceDataService>();
-            builder.Services.AddTransient<DevicesPageModel>();
-            builder.Services.AddTransient<DevicePage>();
+            builder.Services.AddSingleton<ISensorDataService, MockSensorDataService>();
+            builder.Services.AddTransient<SensorsPageModel>();
+            builder.Services.AddTransient<SensorDetailPageModel>();
+            builder.Services.AddTransient<SensorsPage>();
+            builder.Services.AddTransient<SensorDetailPage>();
+            builder.Services.AddTransient<DashboardPageModel>();
+            builder.Services.AddTransient<DashboardPage>();
 
             return builder.Build();
         }

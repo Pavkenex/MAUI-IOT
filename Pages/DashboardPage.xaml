@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MAUI_IOT.Pages.DashboardPage"
+             BackgroundColor="{StaticResource AppBackground}"
+             Title="Dashboard">
+    <RefreshView IsRefreshing="{Binding IsRefreshing}"
+                 Command="{Binding LoadDashboardCommand}"
+                 RefreshColor="{StaticResource GpsAccent}">
+        <ScrollView>
+            <VerticalStackLayout Padding="16,16,16,28" Spacing="16">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="Atmospheric Monitor" Style="{StaticResource PageTitleLabel}" />
+                        <Label Text="{Binding LastUpdated}" Style="{StaticResource PageSubtitleLabel}" />
+                    </VerticalStackLayout>
+
+                    <Button Grid.Column="1"
+                            Text="Refresh"
+                            Command="{Binding LoadDashboardCommand}"
+                            MinimumHeightRequest="44"
+                            Padding="14,8"
+                            VerticalOptions="Center" />
+                </Grid>
+
+                <HorizontalStackLayout Spacing="8" Padding="2,0,0,0">
+                    <Label Text="▮▮▮" TextColor="{StaticResource HumidityAccent}" FontAttributes="Bold" />
+                    <Label Text="BLE: Strong" TextColor="{StaticResource HumidityAccent}" FontAttributes="Bold" />
+                </HorizontalStackLayout>
+
+                <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                   IsVisible="{Binding IsBusy}"
+                                   HeightRequest="22" />
+
+                <Label Text="{Binding ErrorMessage}"
+                       TextColor="DarkRed"
+                       IsVisible="{Binding HasError}" />
+
+                <Border BackgroundColor="{StaticResource GpsCardBackground}"
+                        Stroke="#B8CCE8"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="20">
+                    <VerticalStackLayout Spacing="16">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                                <Label Text="⌖"
+                                       FontSize="28"
+                                       TextColor="{StaticResource GpsAccent}"
+                                       VerticalOptions="Center" />
+
+                                <Label Text="{Binding GpsTitle}"
+                                       FontSize="22"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       LineBreakMode="WordWrap" />
+                            </HorizontalStackLayout>
+
+                            <VerticalStackLayout Grid.Column="1" Spacing="2" HorizontalOptions="End">
+                                <Label Text="COORDINATES"
+                                       Style="{StaticResource MetricTitleLabel}"
+                                       HorizontalTextAlignment="End" />
+                                <Label Text="{Binding Latitude}"
+                                       TextColor="{StaticResource GpsAccent}"
+                                       FontSize="13"
+                                       FontAttributes="Bold"
+                                       HorizontalTextAlignment="End" />
+                                <Label Text="{Binding Longitude}"
+                                       TextColor="{StaticResource GpsAccent}"
+                                       FontSize="13"
+                                       FontAttributes="Bold"
+                                       HorizontalTextAlignment="End" />
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <Border BackgroundColor="{StaticResource MapPlaceholder}"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 10"
+                                HeightRequest="156">
+                            <Grid RowDefinitions="*,*,*,*" ColumnDefinitions="*,*,*,*,*" Opacity="0.92">
+                                <BoxView Grid.Row="1" Grid.ColumnSpan="5" HeightRequest="1" BackgroundColor="#55FFFFFF" />
+                                <BoxView Grid.Row="2" Grid.ColumnSpan="5" HeightRequest="1" BackgroundColor="#55FFFFFF" />
+                                <BoxView Grid.Column="1" Grid.RowSpan="4" WidthRequest="1" BackgroundColor="#55FFFFFF" />
+                                <BoxView Grid.Column="2" Grid.RowSpan="4" WidthRequest="1" BackgroundColor="#55FFFFFF" />
+                                <BoxView Grid.Column="3" Grid.RowSpan="4" WidthRequest="1" BackgroundColor="#55FFFFFF" />
+
+                                <Border Grid.Row="1"
+                                        Grid.Column="2"
+                                        BackgroundColor="{StaticResource GpsAccent}"
+                                        Stroke="White"
+                                        StrokeThickness="2"
+                                        StrokeShape="RoundRectangle 12"
+                                        Padding="6"
+                                        HorizontalOptions="Center"
+                                        VerticalOptions="End">
+                                    <BoxView WidthRequest="8" HeightRequest="8" CornerRadius="4" BackgroundColor="White" />
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <VerticalStackLayout Spacing="2">
+                                <Label Text="ALTITUDE" Style="{StaticResource MetricTitleLabel}" />
+                                <Label Text="{Binding Altitude}"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       FontSize="22"
+                                       FontAttributes="Bold" />
+                            </VerticalStackLayout>
+
+                            <Border Grid.Column="1"
+                                    BackgroundColor="{StaticResource GpsAccent}"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 14"
+                                    Padding="12,8"
+                                    VerticalOptions="End">
+                                <Label Text="{Binding SignalStatus}"
+                                       TextColor="White"
+                                       FontSize="11"
+                                       FontAttributes="Bold" />
+                            </Border>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource DashboardCard}">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="TEMPERATURE" Style="{StaticResource MetricTitleLabel}" />
+                            <HorizontalStackLayout Spacing="6">
+                                <Label Text="{Binding Temperature}" Style="{StaticResource MetricValueLabel}" />
+                            </HorizontalStackLayout>
+                            <Border Style="{StaticResource DashboardBadge}"
+                                    BackgroundColor="{StaticResource PositiveBadgeBackground}"
+                                    HorizontalOptions="Start">
+                                <Label Text="+0.2° FROM LAST MIN"
+                                       TextColor="{StaticResource PositiveBadgeText}"
+                                       FontSize="11"
+                                       FontAttributes="Bold" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <Label Grid.Column="1"
+                               Text="T"
+                               TextColor="{StaticResource TemperatureAccent}"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               VerticalOptions="Start" />
+                    </Grid>
+                </Border>
+
+                <Border Style="{StaticResource DashboardCard}">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="HUMIDITY" Style="{StaticResource MetricTitleLabel}" />
+                            <Label Text="{Binding Humidity}" Style="{StaticResource MetricValueLabel}" />
+                            <Border Style="{StaticResource DashboardBadge}"
+                                    BackgroundColor="{StaticResource StableBadgeBackground}"
+                                    HorizontalOptions="Start">
+                                <Label Text="STABLE"
+                                       TextColor="{StaticResource StableBadgeText}"
+                                       FontSize="11"
+                                       FontAttributes="Bold" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <Label Grid.Column="1"
+                               Text="H"
+                               TextColor="{StaticResource HumidityPurple}"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               VerticalOptions="Start" />
+                    </Grid>
+                </Border>
+
+                <Border Style="{StaticResource DashboardCard}">
+                    <VerticalStackLayout Spacing="16">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="{Binding TrendTitle}"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   FontSize="22"
+                                   FontAttributes="Bold" />
+
+                            <Label Text="{Binding TrendSubtitle}"
+                                   Style="{StaticResource PageSubtitleLabel}" />
+                        </VerticalStackLayout>
+
+                        <HorizontalStackLayout Spacing="8">
+                            <Border Style="{StaticResource DashboardBadge}"
+                                    BackgroundColor="{StaticResource SoftBlue}">
+                                <Label Text="{Binding SelectedTrendRange}"
+                                       TextColor="{StaticResource TemperatureAccent}"
+                                       FontSize="12"
+                                       FontAttributes="Bold" />
+                            </Border>
+
+                            <Border Style="{StaticResource DashboardBadge}"
+                                    BackgroundColor="{StaticResource SoftNeutral}">
+                                <Label Text="7 points"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       FontSize="12"
+                                       FontAttributes="Bold" />
+                            </Border>
+                        </HorizontalStackLayout>
+
+                        <Border Stroke="{StaticResource TrendGridLine}"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 10"
+                                HeightRequest="236"
+                                Padding="12">
+                            <Grid RowDefinitions="*,Auto" RowSpacing="12">
+                                <Grid RowDefinitions="*,*,*,*" ColumnDefinitions="*,*,*,*,*,*,*">
+                                    <BoxView Grid.Row="1" Grid.ColumnSpan="7" HeightRequest="1" BackgroundColor="{StaticResource TrendGridLine}" />
+                                    <BoxView Grid.Row="2" Grid.ColumnSpan="7" HeightRequest="1" BackgroundColor="{StaticResource TrendGridLine}" />
+                                    <BoxView Grid.Column="1" Grid.RowSpan="4" WidthRequest="1" BackgroundColor="{StaticResource TrendGridLine}" />
+                                    <BoxView Grid.Column="2" Grid.RowSpan="4" WidthRequest="1" BackgroundColor="{StaticResource TrendGridLine}" />
+                                    <BoxView Grid.Column="3" Grid.RowSpan="4" WidthRequest="1" BackgroundColor="{StaticResource TrendGridLine}" />
+                                    <BoxView Grid.Column="4" Grid.RowSpan="4" WidthRequest="1" BackgroundColor="{StaticResource TrendGridLine}" />
+                                    <BoxView Grid.Column="5" Grid.RowSpan="4" WidthRequest="1" BackgroundColor="{StaticResource TrendGridLine}" />
+
+                                    <HorizontalStackLayout Grid.RowSpan="4"
+                                                           Grid.ColumnSpan="7"
+                                                           BindableLayout.ItemsSource="{Binding TrendBars}"
+                                                           Spacing="6"
+                                                           HorizontalOptions="Center"
+                                                           VerticalOptions="End">
+                                        <BindableLayout.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid RowDefinitions="*,Auto" RowSpacing="6" WidthRequest="30" HeightRequest="170">
+                                                    <HorizontalStackLayout Spacing="3" HorizontalOptions="Center" VerticalOptions="End">
+                                                        <BoxView WidthRequest="12"
+                                                                 HeightRequest="{Binding TemperatureHeight}"
+                                                                 CornerRadius="4,4,0,0"
+                                                                 BackgroundColor="{StaticResource TemperatureAccent}"
+                                                                 VerticalOptions="End" />
+
+                                                        <BoxView WidthRequest="12"
+                                                                 HeightRequest="{Binding HumidityHeight}"
+                                                                 CornerRadius="4,4,0,0"
+                                                                 BackgroundColor="{StaticResource HumidityPurple}"
+                                                                 VerticalOptions="End" />
+                                                    </HorizontalStackLayout>
+
+                                                    <Label Grid.Row="1"
+                                                           Text="{Binding Label}"
+                                                           FontSize="9"
+                                                           TextColor="{StaticResource TextMuted}"
+                                                           HorizontalTextAlignment="Center" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </BindableLayout.ItemTemplate>
+                                    </HorizontalStackLayout>
+                                </Grid>
+
+                                <Border Grid.Row="1"
+                                        BackgroundColor="White"
+                                        Stroke="#EEF0F5"
+                                        StrokeThickness="1"
+                                        StrokeShape="RoundRectangle 10"
+                                        Padding="10"
+                                        HorizontalOptions="Center">
+                                    <HorizontalStackLayout Spacing="16">
+                                        <HorizontalStackLayout Spacing="7">
+                                            <BoxView WidthRequest="12" HeightRequest="12" CornerRadius="2" BackgroundColor="{StaticResource TemperatureAccent}" />
+                                            <VerticalStackLayout Spacing="0">
+                                                <Label Text="TEMPERATURE" Style="{StaticResource MetricTitleLabel}" FontSize="10" />
+                                                <Label Text="{Binding TrendTemperature}" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                                            </VerticalStackLayout>
+                                        </HorizontalStackLayout>
+
+                                        <HorizontalStackLayout Spacing="7">
+                                            <BoxView WidthRequest="12" HeightRequest="12" CornerRadius="2" BackgroundColor="{StaticResource HumidityPurple}" />
+                                            <VerticalStackLayout Spacing="0">
+                                                <Label Text="HUMIDITY" Style="{StaticResource MetricTitleLabel}" FontSize="10" />
+                                                <Label Text="{Binding TrendHumidity}" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                                            </VerticalStackLayout>
+                                        </HorizontalStackLayout>
+                                    </HorizontalStackLayout>
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
+</ContentPage>

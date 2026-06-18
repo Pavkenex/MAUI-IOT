@@ -22,10 +22,13 @@ namespace MAUI_IOT
 #endif
 
             builder.Services.AddSingleton<ISensorDataService, MockSensorDataService>();
+            builder.Services.AddSingleton<IBluetoothSyncService, MockBluetoothSyncService>();
             builder.Services.AddTransient<SensorsPageModel>();
             builder.Services.AddTransient<SensorDetailPageModel>();
+            builder.Services.AddTransient<SyncPageModel>();
             builder.Services.AddTransient<SensorsPage>();
             builder.Services.AddTransient<SensorDetailPage>();
+            builder.Services.AddTransient<SyncPage>();
             builder.Services.AddTransient<DashboardPageModel>();
             builder.Services.AddTransient<DashboardPage>();
 

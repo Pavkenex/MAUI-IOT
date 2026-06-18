@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:MAUI_IOT.Models"
+             xmlns:pageModels="clr-namespace:MAUI_IOT.PageModels"
+             x:DataType="pageModels:SyncPageModel"
+             x:Class="MAUI_IOT.Pages.SyncPage"
+             BackgroundColor="{StaticResource AppBackground}"
+             Title="Sync">
+    <ScrollView>
+        <VerticalStackLayout Padding="16,16,16,28" Spacing="16">
+            <VerticalStackLayout Spacing="2">
+                <Label Text="Device Sync"
+                       Style="{StaticResource PageTitleLabel}" />
+                <Label Text="Mock Bluetooth connection for the IoT sensor device"
+                       Style="{StaticResource PageSubtitleLabel}" />
+            </VerticalStackLayout>
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}"
+                               IsVisible="{Binding IsBusy}"
+                               HeightRequest="22" />
+
+            <Label Text="{Binding ErrorMessage}"
+                   TextColor="DarkRed"
+                   IsVisible="{Binding HasError}" />
+
+            <Border Style="{StaticResource DashboardCard}">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="12" ColumnSpacing="14">
+                    <Label Grid.Row="0"
+                           Text="Bluetooth"
+                           TextColor="{StaticResource TextPrimary}"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+
+                    <Border Grid.Row="0"
+                            Grid.Column="1"
+                            Style="{StaticResource DashboardBadge}"
+                            BackgroundColor="{StaticResource SoftBlue}">
+                        <Label Text="{Binding BluetoothStatusText}"
+                               TextColor="{StaticResource TemperatureAccent}"
+                               FontSize="11"
+                               FontAttributes="Bold" />
+                    </Border>
+
+                    <Label Grid.Row="1"
+                           Grid.ColumnSpan="2"
+                           Text="{Binding StatusMessage}"
+                           TextColor="{StaticResource TextMuted}"
+                           FontSize="14" />
+
+                    <Button Grid.Row="2"
+                            Grid.ColumnSpan="2"
+                            Text="Enable Bluetooth"
+                            Command="{Binding EnableBluetoothCommand}"
+                            IsEnabled="{Binding CanEnableBluetooth}" />
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource DashboardCard}">
+                <VerticalStackLayout Spacing="14">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+                        <Label Text="Locate Device"
+                               TextColor="{StaticResource TextPrimary}"
+                               FontSize="18"
+                               FontAttributes="Bold" />
+
+                        <Border Grid.Column="1"
+                                Style="{StaticResource DashboardBadge}"
+                                BackgroundColor="{StaticResource SoftNeutral}">
+                            <Label Text="{Binding DeviceStatusText}"
+                                   TextColor="{StaticResource TextMuted}"
+                                   FontSize="11"
+                                   FontAttributes="Bold" />
+                        </Border>
+                    </Grid>
+
+                    <Label Text="Search for the nearby mock BLE monitor before connecting."
+                           TextColor="{StaticResource TextMuted}"
+                           FontSize="14" />
+
+                    <Button Text="Locate Device"
+                            Command="{Binding LocateDeviceCommand}"
+                            IsEnabled="{Binding CanLocateDevice}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border IsVisible="{Binding HasLocatedDevice}"
+                    Style="{StaticResource SensorCard}">
+                <Border.BindingContext>
+                    <Binding Path="LocatedDevice" />
+                </Border.BindingContext>
+
+                <Grid x:DataType="models:BluetoothDeviceInfo"
+                      ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="14">
+                    <Label Grid.Row="0"
+                           Text="{Binding Name}"
+                           TextColor="{StaticResource TextPrimary}"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+
+                    <Border Grid.Row="0"
+                            Grid.Column="1"
+                            Style="{StaticResource DashboardBadge}"
+                            BackgroundColor="{StaticResource PositiveBadgeBackground}">
+                        <Label Text="BLE"
+                               TextColor="{StaticResource PositiveBadgeText}"
+                               FontSize="11"
+                               FontAttributes="Bold" />
+                    </Border>
+
+                    <Label Grid.Row="1"
+                           Text="{Binding Address}"
+                           TextColor="{StaticResource TextMuted}"
+                           FontSize="14" />
+
+                    <Label Grid.Row="2"
+                           Text="{Binding SignalStrength, StringFormat='Signal {0} dBm'}"
+                           TextColor="{StaticResource TextPrimary}"
+                           FontSize="22"
+                           FontAttributes="Bold" />
+
+                    <Label Grid.Row="3"
+                           Grid.ColumnSpan="2"
+                           Text="Onboard sensors"
+                           TextColor="{StaticResource TextPrimary}"
+                           FontSize="15"
+                           FontAttributes="Bold" />
+
+                    <CollectionView Grid.Row="4"
+                                    Grid.ColumnSpan="2"
+                                    ItemsSource="{Binding Sensors}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:SensorSummary">
+                                <Border BackgroundColor="{StaticResource SoftNeutral}"
+                                        StrokeThickness="0"
+                                        StrokeShape="RoundRectangle 10"
+                                        Padding="12"
+                                        Margin="0,0,0,8">
+                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="4" ColumnSpacing="12">
+                                        <Label Text="{Binding Name}"
+                                               TextColor="{StaticResource TextPrimary}"
+                                               FontSize="15"
+                                               FontAttributes="Bold" />
+
+                                        <Label Grid.Column="1"
+                                               Text="{Binding LatestReading}"
+                                               TextColor="{StaticResource TextPrimary}"
+                                               FontSize="15"
+                                               FontAttributes="Bold" />
+
+                                        <Label Grid.Row="1"
+                                               Text="{Binding Type}"
+                                               TextColor="{StaticResource TextMuted}"
+                                               FontSize="12" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <Grid Grid.Row="5"
+                          Grid.ColumnSpan="2"
+                          ColumnDefinitions="*,*"
+                          ColumnSpacing="12">
+                        <Button Text="Connect"
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ConnectDeviceCommand}"
+                                IsEnabled="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.CanConnectDevice}" />
+
+                        <Button Grid.Column="1"
+                                Text="Disconnect"
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DisconnectDeviceCommand}"
+                                IsEnabled="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.CanDisconnectDevice}" />
+                    </Grid>
+                </Grid>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

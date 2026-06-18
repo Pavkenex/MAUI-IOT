@@ -6,6 +6,7 @@ namespace MAUI_IOT.Models;
 
 public sealed record SensorSummary(
     int Id,
+    string SourceDeviceId,
     string Name,
     string Type,
     bool IsOnline,

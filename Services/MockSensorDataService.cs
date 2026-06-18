@@ -7,9 +7,11 @@ namespace MAUI_IOT.Services;
 
 public sealed class MockSensorDataService : ISensorDataService
 {
+    public const string AtmosMonitorDeviceId = "atmos-monitor-01";
+
     private static readonly IReadOnlyList<SensorSummary> Sensors = [
-        new SensorSummary(1, "Temperature Sensor", "Temperature", true, "24.5°C"),
-        new SensorSummary(2, "Humidity Sensor", "Humidity", true, "45%")
+        new SensorSummary(1, AtmosMonitorDeviceId, "Temperature Sensor", "Temperature", true, "24.5°C"),
+        new SensorSummary(2, AtmosMonitorDeviceId, "Humidity Sensor", "Humidity", true, "45%")
     ];
 
     private static readonly IReadOnlyList<Reading> Readings = [

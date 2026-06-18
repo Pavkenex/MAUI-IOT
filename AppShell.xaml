@@ -25,6 +25,11 @@
             Title="Sensors"
             ContentTemplate="{DataTemplate pages:SensorsPage}"
             Route="sensors" />
+
+        <ShellContent
+            Title="Sync"
+            ContentTemplate="{DataTemplate pages:SyncPage}"
+            Route="sync" />
     </TabBar>
 
 </Shell>

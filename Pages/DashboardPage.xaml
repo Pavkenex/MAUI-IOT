@@ -11,7 +11,7 @@
             <VerticalStackLayout Padding="16,16,16,28" Spacing="16">
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                     <VerticalStackLayout Spacing="2">
-                        <Label Text="Atmospheric Monitor" Style="{StaticResource PageTitleLabel}" />
+                        <Label Text="ESP Scan Dashboard" Style="{StaticResource PageTitleLabel}" />
                         <Label Text="{Binding LastUpdated}" Style="{StaticResource PageSubtitleLabel}" />
                     </VerticalStackLayout>
 
@@ -23,10 +23,44 @@
                             VerticalOptions="Center" />
                 </Grid>
 
-                <HorizontalStackLayout Spacing="8" Padding="2,0,0,0">
-                    <Label Text="▮▮▮" TextColor="{StaticResource HumidityAccent}" FontAttributes="Bold" />
-                    <Label Text="BLE: Strong" TextColor="{StaticResource HumidityAccent}" FontAttributes="Bold" />
-                </HorizontalStackLayout>
+                <!-- Scan Summary Card -->
+                <Border Style="{StaticResource DashboardCard}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="ESP Field Scan Summary"
+                               TextColor="{StaticResource TextPrimary}"
+                               FontSize="16"
+                               FontAttributes="Bold" />
+                        <Label Text="{Binding ScanSummary}"
+                               TextColor="{StaticResource TextMuted}"
+                               FontSize="13" />
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                            <VerticalStackLayout Spacing="2">
+                                <Label Text="SESSIONS"
+                                       Style="{StaticResource MetricTitleLabel}" />
+                                <Label Text="{Binding TotalScanSessions}"
+                                       TextColor="{StaticResource TemperatureAccent}"
+                                       FontSize="20"
+                                       FontAttributes="Bold" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                <Label Text="DEVICES"
+                                       Style="{StaticResource MetricTitleLabel}" />
+                                <Label Text="{Binding UniqueDevices}"
+                                       TextColor="{StaticResource HumidityAccent}"
+                                       FontSize="20"
+                                       FontAttributes="Bold" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="2" Spacing="2">
+                                <Label Text="BROADCASTS"
+                                       Style="{StaticResource MetricTitleLabel}" />
+                                <Label Text="{Binding TotalBroadcasts}"
+                                       TextColor="{StaticResource GpsAccent}"
+                                       FontSize="20"
+                                       FontAttributes="Bold" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
 
                 <ActivityIndicator IsRunning="{Binding IsBusy}"
                                    IsVisible="{Binding IsBusy}"
@@ -36,6 +70,7 @@
                        TextColor="DarkRed"
                        IsVisible="{Binding HasError}" />
 
+                <!-- Latest ESP Device Card -->
                 <Border BackgroundColor="{StaticResource GpsCardBackground}"
                         Stroke="#B8CCE8"
                         StrokeThickness="1"
@@ -100,11 +135,15 @@
 
                         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                             <VerticalStackLayout Spacing="2">
-                                <Label Text="ALTITUDE" Style="{StaticResource MetricTitleLabel}" />
-                                <Label Text="{Binding Altitude}"
+                                <Label Text="LATEST BROADCAST" Style="{StaticResource MetricTitleLabel}" />
+                                <Label Text="{Binding LatestDeviceLabel}"
                                        TextColor="{StaticResource TextPrimary}"
-                                       FontSize="22"
-                                       FontAttributes="Bold" />
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       LineBreakMode="TailTruncation" />
+                                <Label Text="{Binding LatestDeviceUid}"
+                                       TextColor="{StaticResource TextMuted}"
+                                       FontSize="12" />
                             </VerticalStackLayout>
 
                             <Border Grid.Column="1"
@@ -118,6 +157,24 @@
                                        FontSize="11"
                                        FontAttributes="Bold" />
                             </Border>
+                        </Grid>
+
+                        <!-- Latest broadcast measurements -->
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <VerticalStackLayout Spacing="2">
+                                <Label Text="TEMP" Style="{StaticResource MetricTitleLabel}" />
+                                <Label Text="{Binding LatestTemperature}"
+                                       TextColor="{StaticResource TemperatureAccent}"
+                                       FontSize="22"
+                                       FontAttributes="Bold" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                <Label Text="HUMIDITY" Style="{StaticResource MetricTitleLabel}" />
+                                <Label Text="{Binding LatestHumidity}"
+                                       TextColor="{StaticResource HumidityPurple}"
+                                       FontSize="22"
+                                       FontAttributes="Bold" />
+                            </VerticalStackLayout>
                         </Grid>
                     </VerticalStackLayout>
                 </Border>

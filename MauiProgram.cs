@@ -2,6 +2,7 @@
 using MAUI_IOT.PageModels;
 using MAUI_IOT.Pages;
 using MAUI_IOT.Services;
+
 namespace MAUI_IOT
 {
     public static class MauiProgram
@@ -18,19 +19,26 @@ namespace MAUI_IOT
                 });
 
 #if DEBUG
-    		builder.Logging.AddDebug();
+            builder.Logging.AddDebug();
 #endif
 
+            // Services
             builder.Services.AddSingleton<ISensorDataService, MockSensorDataService>();
-            builder.Services.AddSingleton<IBluetoothSyncService, MockBluetoothSyncService>();
+            builder.Services.AddSingleton<IBluetoothScanService, MockBluetoothScanService>();
+
+            // Page models
+            builder.Services.AddTransient<DashboardPageModel>();
+            builder.Services.AddTransient<ScanPageModel>();
             builder.Services.AddTransient<SensorsPageModel>();
             builder.Services.AddTransient<SensorDetailPageModel>();
-            builder.Services.AddTransient<SyncPageModel>();
+            builder.Services.AddTransient<HistoryPageModel>();
+
+            // Pages
+            builder.Services.AddTransient<DashboardPage>();
+            builder.Services.AddTransient<ScanPage>();
             builder.Services.AddTransient<SensorsPage>();
             builder.Services.AddTransient<SensorDetailPage>();
-            builder.Services.AddTransient<SyncPage>();
-            builder.Services.AddTransient<DashboardPageModel>();
-            builder.Services.AddTransient<DashboardPage>();
+            builder.Services.AddTransient<HistoryPage>();
 
             return builder.Build();
         }

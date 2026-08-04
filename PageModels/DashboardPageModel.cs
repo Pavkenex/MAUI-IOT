@@ -2,21 +2,22 @@
 using CommunityToolkit.Mvvm.Input;
 using MAUI_IOT.Models;
 using MAUI_IOT.Services;
-using System;
 using System.Collections.ObjectModel;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Text;
 
 namespace MAUI_IOT.PageModels
 {
-    public partial class DashboardPageModel:ObservableObject
+    public partial class DashboardPageModel : ObservableObject
     {
         private readonly ISensorDataService _sensorService;
+        private readonly IBluetoothScanService _scanService;
 
-        public DashboardPageModel(ISensorDataService sensorService)
+        public DashboardPageModel(
+            ISensorDataService sensorService,
+            IBluetoothScanService scanService)
         {
             _sensorService = sensorService;
+            _scanService = scanService;
         }
 
         [ObservableProperty]
@@ -30,6 +31,7 @@ namespace MAUI_IOT.PageModels
 
         public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
 
+        // Demo sensor readings (from mock sensor service)
         [ObservableProperty]
         private string temperature = "--";
         [ObservableProperty]
@@ -37,24 +39,54 @@ namespace MAUI_IOT.PageModels
         [ObservableProperty]
         private string lastUpdated = "Last updated --";
 
+        // Scan context
+        [ObservableProperty]
+        private int totalScanSessions;
 
         [ObservableProperty]
-        private string gpsTitle = "Primary GPS Data";
+        private int totalBroadcasts;
 
         [ObservableProperty]
-        private string latitude = "34.0522° N";
+        private int uniqueDevices;
 
         [ObservableProperty]
-        private string longitude = "118.2437° W";
+        private string scanSummary = "No scans yet";
+
+        // Latest broadcast data (multi-device)
+        [ObservableProperty]
+        private string latestDeviceLabel = "--";
 
         [ObservableProperty]
-        private string altitude = "284m AMSL";
+        private string latestDeviceUid = "--";
 
         [ObservableProperty]
-        private string signalStatus = "Signal: Locked";
+        private string latestTemperature = "--";
 
         [ObservableProperty]
-        private string trendTitle = "Atmospheric Trends";
+        private string latestHumidity = "--";
+
+        [ObservableProperty]
+        private string latestSignal = "--";
+
+        // GPS data from latest broadcast
+        [ObservableProperty]
+        private string gpsTitle = "Latest ESP Device GPS";
+
+        [ObservableProperty]
+        private string latitude = "--";
+
+        [ObservableProperty]
+        private string longitude = "--";
+
+        [ObservableProperty]
+        private string altitude = "N/A";
+
+        [ObservableProperty]
+        private string signalStatus = "Signal: --";
+
+        // Trend
+        [ObservableProperty]
+        private string trendTitle = "Sensor Trends";
 
         [ObservableProperty]
         private string trendSubtitle = "Latest 7 measurements";
@@ -80,25 +112,16 @@ namespace MAUI_IOT.PageModels
                 IsBusy = true;
                 ErrorMessage = null;
                 OnPropertyChanged(nameof(HasError));
-                var sensors = await _sensorService.GetSensorsAsync();
-                var temperatureSensor = FindSensor(sensors, "Temperature");
-                var humiditySensor = FindSensor(sensors, "Humidity");
-                var temperatureReadings = temperatureSensor is null
-                    ? []
-                    : LatestReadings(await _sensorService.GetReadingsAsync(temperatureSensor.Id));
-                var humidityReadings = humiditySensor is null
-                    ? []
-                    : LatestReadings(await _sensorService.GetReadingsAsync(humiditySensor.Id));
 
-                Temperature = temperatureReadings.LastOrDefault()?.Value ?? temperatureSensor?.LatestReading ?? "--";
-                Humidity = humidityReadings.LastOrDefault()?.Value ?? humiditySensor?.LatestReading ?? "--";
-                TrendTemperature = Temperature;
-                TrendHumidity = Humidity;
-                LoadTrendBars(temperatureReadings, humidityReadings);
+                // Load sensor data (existing mock demo data)
+                await LoadSensorDataAsync();
+
+                // Load scan data
+                await LoadScanDataAsync();
+
                 LastUpdated = $"Last updated {DateTime.Now:HH:mm}";
-
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ErrorMessage = $"Error loading dashboard: {ex.Message}";
                 OnPropertyChanged(nameof(HasError));
@@ -107,6 +130,75 @@ namespace MAUI_IOT.PageModels
             {
                 IsBusy = false;
                 IsRefreshing = false;
+            }
+        }
+
+        private async Task LoadSensorDataAsync()
+        {
+            var sensors = await _sensorService.GetSensorsAsync();
+            var temperatureSensor = FindSensor(sensors, "Temperature");
+            var humiditySensor = FindSensor(sensors, "Humidity");
+            var temperatureReadings = temperatureSensor is null
+                ? []
+                : LatestReadings(await _sensorService.GetReadingsAsync(temperatureSensor.Id));
+            var humidityReadings = humiditySensor is null
+                ? []
+                : LatestReadings(await _sensorService.GetReadingsAsync(humiditySensor.Id));
+
+            Temperature = temperatureReadings.LastOrDefault()?.Value ?? temperatureSensor?.LatestReading ?? "--";
+            Humidity = humidityReadings.LastOrDefault()?.Value ?? humiditySensor?.LatestReading ?? "--";
+            TrendTemperature = Temperature;
+            TrendHumidity = Humidity;
+            LoadTrendBars(temperatureReadings, humidityReadings);
+        }
+
+        private async Task LoadScanDataAsync()
+        {
+            var sessions = await _scanService.GetScanSessionsAsync();
+            TotalScanSessions = sessions.Count;
+            TotalBroadcasts = sessions.Sum(s => s.BroadcastCount);
+            UniqueDevices = sessions
+                .SelectMany(s => s.Broadcasts)
+                .Select(b => b.DeviceUid)
+                .Distinct()
+                .Count();
+
+            if (TotalBroadcasts > 0)
+            {
+                ScanSummary = $"{TotalScanSessions} session(s), {UniqueDevices} ESP device(s), {TotalBroadcasts} broadcast(s)";
+
+                // Take latest broadcast from most recent session
+                var latestSession = sessions.OrderByDescending(s => s.StartedAt).First();
+                var latestBroadcast = latestSession.Broadcasts
+                    .OrderByDescending(b => b.ReceivedAt)
+                    .First();
+
+                LatestDeviceLabel = latestBroadcast.DeviceLabel;
+                LatestDeviceUid = latestBroadcast.DeviceUid;
+                LatestTemperature = $"{latestBroadcast.Temperature:F1}°C";
+                LatestHumidity = $"{latestBroadcast.Humidity:F1}%";
+                LatestSignal = $"{latestBroadcast.SignalStrength} dBm";
+
+                Latitude = $"{latestBroadcast.Latitude:F6}° N";
+                Longitude = $"{latestBroadcast.Longitude:F6}° W";
+                SignalStatus = latestBroadcast.IsAuthenticated
+                    ? $"Trusted ({latestBroadcast.DeviceUid})"
+                    : $"Unknown ({latestBroadcast.DeviceUid})";
+
+                GpsTitle = $"{latestBroadcast.DeviceUid} GPS";
+            }
+            else
+            {
+                ScanSummary = "No scans yet. Go to the Scan tab and start a BLE scan.";
+                LatestDeviceLabel = "--";
+                LatestDeviceUid = "--";
+                LatestTemperature = "--";
+                LatestHumidity = "--";
+                LatestSignal = "--";
+                Latitude = "--";
+                Longitude = "--";
+                SignalStatus = "Signal: --";
+                GpsTitle = "ESP Device GPS";
             }
         }
 
@@ -129,8 +221,8 @@ namespace MAUI_IOT.PageModels
         {
             TrendBars.Clear();
 
-            var temperatureValues = temperatureReadings.Select(reading => ParseNumber(reading.Value)).ToList();
-            var humidityValues = humidityReadings.Select(reading => ParseNumber(reading.Value)).ToList();
+            var temperatureValues = temperatureReadings.Select(r => ParseNumber(r.Value)).ToList();
+            var humidityValues = humidityReadings.Select(r => ParseNumber(r.Value)).ToList();
             var count = Math.Max(temperatureValues.Count, humidityValues.Count);
 
             for (var index = 0; index < count; index++)
@@ -149,7 +241,7 @@ namespace MAUI_IOT.PageModels
         private static double ParseNumber(string value)
         {
             var numericText = new string(value
-                .Where(character => char.IsDigit(character) || character == '.' || character == ',' || character == '-')
+                .Where(c => char.IsDigit(c) || c == '.' || c == ',' || c == '-')
                 .ToArray())
                 .Replace(',', '.');
 

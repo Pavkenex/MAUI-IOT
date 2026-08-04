@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:MAUI_IOT.Models"
+             xmlns:pageModels="clr-namespace:MAUI_IOT.PageModels"
+             x:DataType="pageModels:HistoryPageModel"
+             x:Class="MAUI_IOT.Pages.HistoryPage"
+             BackgroundColor="{StaticResource AppBackground}"
+             Title="History">
+    <RefreshView IsRefreshing="{Binding IsBusy}"
+                 Command="{Binding LoadHistoryCommand}">
+        <ScrollView>
+            <VerticalStackLayout Padding="16,16,16,28" Spacing="16">
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="Scan History"
+                           Style="{StaticResource PageTitleLabel}" />
+                    <Label Text="Past BLE scan sessions and collected ESP broadcasts"
+                           Style="{StaticResource PageSubtitleLabel}" />
+                </VerticalStackLayout>
+
+                <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                   IsVisible="{Binding IsBusy}"
+                                   HeightRequest="22" />
+
+                <Label Text="{Binding ErrorMessage}"
+                       TextColor="DarkRed"
+                       IsVisible="{Binding HasError}" />
+
+                <!-- No sessions state -->
+                <Border IsVisible="{Binding HasSessions, Converter={StaticResource InvertedBoolConverter}}"
+                        Style="{StaticResource DashboardCard}">
+                    <VerticalStackLayout Spacing="8" Padding="8">
+                        <Label Text="No scans yet"
+                               TextColor="{StaticResource TextMuted}"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               HorizontalTextAlignment="Center" />
+                        <Label Text="Go to the Scan tab and start a BLE scan to collect ESP broadcasts."
+                               TextColor="{StaticResource TextMuted}"
+                               FontSize="13"
+                               HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Session list -->
+                <CollectionView ItemsSource="{Binding Sessions}"
+                                IsVisible="{Binding HasSessions}">
+                    <CollectionView.Header>
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="{Binding TotalBroadcasts, StringFormat='Total broadcasts: {0}'}"
+                                   TextColor="{StaticResource TextMuted}"
+                                   FontSize="13" />
+                        </VerticalStackLayout>
+                    </CollectionView.Header>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="pageModels:ScanSessionSummary">
+                            <Border BackgroundColor="{StaticResource CardBackground}"
+                                    Stroke="{StaticResource CardStroke}"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 12"
+                                    Padding="14"
+                                    Margin="0,0,0,10">
+                                <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="6" ColumnSpacing="12">
+                                    <Label Grid.Row="0"
+                                           Text="{Binding Name}"
+                                           TextColor="{StaticResource TextPrimary}"
+                                           FontSize="16"
+                                           FontAttributes="Bold" />
+
+                                    <Border Grid.Row="0"
+                                            Grid.Column="1"
+                                            Style="{StaticResource DashboardBadge}"
+                                            BackgroundColor="{StaticResource SoftBlue}">
+                                        <Label Text="{Binding BroadcastCount, StringFormat='{0} readings'}"
+                                               TextColor="{StaticResource TemperatureAccent}"
+                                               FontSize="11"
+                                               FontAttributes="Bold" />
+                                    </Border>
+
+                                    <HorizontalStackLayout Grid.Row="1" Grid.ColumnSpan="2" Spacing="16">
+                                        <Label TextColor="{StaticResource TextMuted}" FontSize="12">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="Started: " />
+                                                    <Span Text="{Binding StartedAt, StringFormat='{0:HH:mm:ss}'}" FontAttributes="Bold" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                        <Label TextColor="{StaticResource TextMuted}" FontSize="12">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="Devices: " />
+                                                    <Span Text="{Binding DeviceCount}" FontAttributes="Bold" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                    </HorizontalStackLayout>
+
+                                    <Label Grid.Row="2"
+                                           Grid.ColumnSpan="2"
+                                           TextColor="{StaticResource TextMuted}"
+                                           FontSize="11">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="Latest: " />
+                                                <Span Text="{Binding LatestBroadcastAt, StringFormat='{0:yyyy-MM-dd HH:mm:ss}'}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- Recent Broadcasts -->
+                <Label Text="Recent ESP Broadcasts"
+                       TextColor="{StaticResource TextPrimary}"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       IsVisible="{Binding HasSessions}"
+                       Margin="0,8,0,0" />
+
+                <CollectionView ItemsSource="{Binding RecentBroadcasts}"
+                                IsVisible="{Binding HasSessions}">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:EspBroadcastReading">
+                            <Border BackgroundColor="{StaticResource CardBackground}"
+                                    Stroke="{StaticResource CardStroke}"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 12"
+                                    Padding="14"
+                                    Margin="0,0,0,10">
+                                <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="6" ColumnSpacing="12">
+                                    <Label Grid.Row="0"
+                                           Text="{Binding DeviceUid}"
+                                           TextColor="{StaticResource TextPrimary}"
+                                           FontSize="15"
+                                           FontAttributes="Bold" />
+
+                                    <Border Grid.Row="0"
+                                            Grid.Column="1"
+                                            Style="{StaticResource DashboardBadge}"
+                                            BackgroundColor="{StaticResource SoftNeutral}">
+                                        <Label Text="{Binding IsAuthenticated, Converter={StaticResource BoolToAuthTextConverter}}"
+                                               TextColor="{StaticResource TextMuted}"
+                                               FontSize="10"
+                                               FontAttributes="Bold" />
+                                    </Border>
+
+                                    <Label Grid.Row="1"
+                                           Grid.ColumnSpan="2"
+                                           Text="{Binding DeviceLabel}"
+                                           TextColor="{StaticResource TextPrimary}"
+                                           FontSize="13"
+                                           FontAttributes="Italic" />
+
+                                    <HorizontalStackLayout Grid.Row="2" Grid.ColumnSpan="2" Spacing="14">
+                                        <Label Text="{Binding Temperature, StringFormat='{0:F1}°C'}"
+                                               TextColor="{StaticResource TemperatureAccent}"
+                                               FontSize="12"
+                                               FontAttributes="Bold" />
+                                        <Label Text="{Binding Humidity, StringFormat='{0:F1}%'}"
+                                               TextColor="{StaticResource HumidityPurple}"
+                                               FontSize="12"
+                                               FontAttributes="Bold" />
+                                        <Label Text="{Binding ReceivedAt, StringFormat='{0:HH:mm:ss}'}"
+                                               TextColor="{StaticResource TextMuted}"
+                                               FontSize="11" />
+                                    </HorizontalStackLayout>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
+</ContentPage>

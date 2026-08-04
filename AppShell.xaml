@@ -22,14 +22,19 @@
             Route="dashboard" />
 
         <ShellContent
+            Title="Scan"
+            ContentTemplate="{DataTemplate pages:ScanPage}"
+            Route="scan" />
+
+        <ShellContent
             Title="Sensors"
             ContentTemplate="{DataTemplate pages:SensorsPage}"
             Route="sensors" />
 
         <ShellContent
-            Title="Sync"
-            ContentTemplate="{DataTemplate pages:SyncPage}"
-            Route="sync" />
+            Title="History"
+            ContentTemplate="{DataTemplate pages:HistoryPage}"
+            Route="history" />
     </TabBar>
 
 </Shell>

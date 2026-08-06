@@ -24,7 +24,7 @@ The central loop. One instance, started once at app launch, running on a backgro
 
 Loop semantics — snapshot-based passes (matches the existing `ScanForDevicesAsync` API, which always stops the adapter scan when it returns):
 
-1. Request Bluetooth permission once at startup (`RequestBluetoothPermissionAsync`). If denied or Bluetooth is off, emit status and re-check on the next pass — the app never sits silently in "permission missing".
+1. Request Bluetooth permission once at startup (`RequestBluetoothPermissionAsync`). If denied, emit status and keep the banner; do NOT re-prompt (Android would re-show the dialog each pass). On every pass, re-check only `IsBluetoothEnabledAsync()` and surface its state — the loop never sits silently in "permission missing".
 2. Run one scan pass: `ScanForDevicesAsync(timeout: 10 s)` (scans stop between passes; `ConnectAsync` also stops any active scan, so pass-based flow avoids adapter contention).
 3. For each discovered ESP device, in order of RSSI:
    - Skip if the device is currently syncing or in its 30 s cooldown.
@@ -43,6 +43,8 @@ On failure at any step (connect error, sync error, connection lost): log, mark t
 Observable state exposed for the Scan tab (via `ObservableObject`):
 - `Devices`: `ObservableCollection<EspDeviceRow>` — a new row view model (not an extension of the positional `EspDeviceInfo` record, to avoid ripples into its `with` expressions and `CreateDeviceInfo`). Each row wraps `EspDeviceInfo` and adds `AuthorizationStatus` (Authorized / Ignored / Pending), `SyncStatus` (Idle / Connecting / Syncing / Failed / Last sync), and `LastSyncAt` (DateTimeOffset?).
 - `IsScanning`, `BluetoothStatusText`, `StatusMessage`.
+
+UI-thread contract: the loop runs on a background task; all mutations of the `ObservableCollection` and `ObservableObject` state are dispatched to the UI thread (`MainThread.BeginInvokeOnMainThread`, the pattern already used in `SyncPageModel`). The page model never touches service state on a background thread.
 
 Starts once from `App.OnStart` (or AppShell constructor). Runs for the lifetime of the app; no stop/start UI.
 
@@ -79,8 +81,8 @@ public interface IDeviceAuthorizationService
 - New `SensorDataService` (replacing `MockSensorDataService`) implementing the existing `ISensorDataService` against `EspReadingRepository`.
 - **Sensor model**: mirrors the current UI — temperature and humidity are separate sensors. Each device with readings yields two `SensorSummary` entries (one per metric). The mock had two hardcoded sensors; the real service derives them from the repository's device list (`GetDeviceIdsAsync`).
 - **Stable int id mapping**: `ISensorDataService` is keyed by `int sensorId`, but readings are keyed by string deviceId. The service derives `sensorId` deterministically (FNV-1a 32-bit hash of `"{deviceId}|temp"` / `"{deviceId}|hum"`), stable across launches. Reverse lookup (`GetSensorAsync(int)`, `GetReadingsAsync(int)`) rebuilds the mapping by iterating the repository's device list and recomputing hashes — a few devices, so this is cheap and stateless.
-- Population: `Name` = device display name; `Type` = "Temperature" / "Humidity"; `IsOnline` = latest reading exists (or recent); `Value` = latest metric value formatted (e.g., "24.5°C", "45%").
-- `GetReadingsAsync(sensorId)` returns the device's history for that single metric, `Value` formatted per metric, `RecordedAtUtc` as the timestamp (matches `SensorDetailPage` rendering of one value per row).
+- Population: `Name` = device display name; `SourceDeviceId` = device id; `Type` = "Temperature" / "Humidity"; `IsOnline` = device has at least one stored reading (no recency window); `Value` = latest metric value formatted (e.g., "24.5°C", "45%").
+- `GetReadingsAsync(sensorId)` returns the device's history for that single metric, ordered ascending by time (matches the mock's ordering and `SensorDetailPage` list rendering). `Value` formatted per metric; timestamp displayed as local time (`RecordedAtUtc.ToLocalTime()`, matching `DashboardPageModel`).
 - Delete `MockSensorDataService`; register `SensorDataService` in `MauiProgram.cs`.
 - `SensorsPage` / `SensorDetailPage` XAML unchanged — they consume `ISensorDataService`.
 

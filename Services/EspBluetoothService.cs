@@ -236,10 +236,12 @@ public sealed class EspBluetoothService : IEspBluetoothService
 
         _connectedDevice = null;
         _connectedDeviceInfo = null;
+        _characteristics.Clear();
     }
 
     public async Task<EspSyncResult> SynchronizeAsync(
         EspDeviceInfo device,
+        EspDeviceIdentity identity,
         IProgress<EspSyncProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
@@ -250,7 +252,7 @@ public sealed class EspBluetoothService : IEspBluetoothService
 
         try
         {
-            return await RunSynchronizationAsync(device, progress, cancellationToken);
+            return await RunSynchronizationAsync(device, identity, progress, cancellationToken);
         }
         finally
         {
@@ -258,8 +260,31 @@ public sealed class EspBluetoothService : IEspBluetoothService
         }
     }
 
+    public async Task<EspDeviceIdentity> ReadDeviceIdentityAsync(
+        EspDeviceInfo device,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsConnected || _connectedDevice is null)
+        {
+            throw new EspSyncException("Device is not connected.");
+        }
+
+        if (_connectedDeviceInfo?.Id != device.Id)
+        {
+            throw new EspSyncException($"Connected to a different device ({_connectedDeviceInfo?.Name ?? "unknown"}).");
+        }
+
+        var identityCharacteristic = await GetCharacteristicAsync(
+            _connectedDevice.Id.ToString(),
+            EspProtocol.IdentityUuid,
+            cancellationToken);
+
+        return await ReadIdentityAsync(identityCharacteristic, cancellationToken);
+    }
+
     private async Task<EspSyncResult> RunSynchronizationAsync(
         EspDeviceInfo device,
+        EspDeviceIdentity identity,
         IProgress<EspSyncProgress>? progress,
         CancellationToken cancellationToken)
     {
@@ -272,7 +297,6 @@ public sealed class EspBluetoothService : IEspBluetoothService
         }
 
         var deviceIdKey = _connectedDevice.Id.ToString();
-        var identityCharacteristic = await GetCharacteristicAsync(deviceIdKey, EspProtocol.IdentityUuid, cancellationToken);
         var uptimeCharacteristic = await GetCharacteristicAsync(deviceIdKey, EspProtocol.UptimeUuid, cancellationToken);
         var rangeCharacteristic = await GetCharacteristicAsync(deviceIdKey, EspProtocol.RangeUuid, cancellationToken);
         var controlCharacteristic = await GetCharacteristicAsync(deviceIdKey, EspProtocol.ControlUuid, cancellationToken);
@@ -280,7 +304,6 @@ public sealed class EspBluetoothService : IEspBluetoothService
 
         Report(progress, new EspSyncProgress(EspSyncStage.ReadingDeviceInfo, 0, 0, 0, 0));
 
-        var identity = await ReadIdentityAsync(identityCharacteristic, cancellationToken);
         var range = await ReadRangeAsync(rangeCharacteristic, cancellationToken);
 
         var transfer = await StartTransferAsync(
@@ -352,7 +375,7 @@ public sealed class EspBluetoothService : IEspBluetoothService
 
             Report(progress, new EspSyncProgress(EspSyncStage.Transferring, 0, 0, 0, 0));
 
-            var outcome = await transfer.Completion.Task.WaitAsync(syncCts.Token);
+            var outcome = await transfer.Completion.WaitAsync(syncCts.Token);
 
             if (outcome.Kind == TransferOutcomeKind.SessionMismatch && allowSessionRetry)
             {
@@ -707,6 +730,7 @@ public sealed class EspBluetoothService : IEspBluetoothService
 
         _connectedDevice = null;
         _connectedDeviceInfo = null;
+        _characteristics.Clear();
 
         if (_connectionLostHandlerAttached)
         {
@@ -723,7 +747,8 @@ public sealed class EspBluetoothService : IEspBluetoothService
         }
 
         return device.AdvertisementRecords.Any(record =>
-            record.Type == AdvertisementRecordType.ServiceUuid128 &&
+            (record.Type == AdvertisementRecordType.UuidsIncomplete128Bit ||
+             record.Type == AdvertisementRecordType.UuidsComplete128Bit) &&
             record.Data.Length == _serviceUuidBytes.Length &&
             record.Data.AsSpan().SequenceEqual(_serviceUuidBytes));
     }

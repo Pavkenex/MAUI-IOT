@@ -16,7 +16,7 @@ public static class EspControlEncoder
 
     public static byte[] Cancel()
     {
-        return [EspProtocol.ControlCommand.Cancel, EspProtocol.Version];
+        return [(byte)EspProtocol.ControlCommand.Cancel, EspProtocol.Version];
     }
 
     public static byte[] BuildCommand(EspProtocol.ControlCommand command, uint bootSessionId, uint readingId)

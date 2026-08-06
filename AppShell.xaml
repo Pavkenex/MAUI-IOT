@@ -27,11 +27,6 @@
             Route="scan" />
 
         <ShellContent
-            Title="Sync"
-            ContentTemplate="{DataTemplate pages:SyncPage}"
-            Route="sync" />
-
-        <ShellContent
             Title="Sensors"
             ContentTemplate="{DataTemplate pages:SensorsPage}"
             Route="sensors" />

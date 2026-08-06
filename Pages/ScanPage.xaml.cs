@@ -12,19 +12,4 @@ public partial class ScanPage : ContentPage
         _pageModel = pageModel;
         BindingContext = _pageModel;
     }
-
-    protected override async void OnAppearing()
-    {
-        base.OnAppearing();
-        await _pageModel.LoadStatusCommand.ExecuteAsync(null);
-    }
-
-    protected override void OnDisappearing()
-    {
-        base.OnDisappearing();
-        if (_pageModel.IsScanning)
-        {
-            _pageModel.StopScanCommand.Execute(null);
-        }
-    }
 }

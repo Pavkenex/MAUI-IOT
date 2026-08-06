@@ -43,7 +43,7 @@ namespace MAUI_IOT.PageModels
         private int pendingUploads;
 
         [ObservableProperty]
-        private string scanSummary = "No readings stored yet. Use the Scan tab to connect to an ESP.";
+        private string scanSummary = "No readings stored yet. Readings are downloaded automatically from nearby ESPs.";
 
         [ObservableProperty]
         private string latestDeviceId = "--";
@@ -101,7 +101,7 @@ namespace MAUI_IOT.PageModels
 
             if (TotalReadings == 0 || deviceIds.Count == 0)
             {
-                ScanSummary = "No readings stored yet. Use the Scan tab to connect to an ESP.";
+                ScanSummary = "No readings stored yet. Readings are downloaded automatically from nearby ESPs.";
                 LatestDeviceId = "--";
                 Temperature = "--";
                 Humidity = "--";

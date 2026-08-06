@@ -12,12 +12,12 @@
             <VerticalStackLayout Spacing="2">
                 <Label Text="ESP Discovery"
                        Style="{StaticResource PageTitleLabel}" />
-                <Label Text="Find nearby ESP32 DHT22 loggers over Bluetooth Low Energy"
+                <Label Text="Nearby ESP32 DHT22 loggers are discovered and synced automatically"
                        Style="{StaticResource PageSubtitleLabel}" />
             </VerticalStackLayout>
 
-            <ActivityIndicator IsRunning="{Binding IsBusy}"
-                               IsVisible="{Binding IsBusy}"
+            <ActivityIndicator IsRunning="{Binding IsScanning}"
+                               IsVisible="{Binding IsScanning}"
                                HeightRequest="22" />
 
             <Label Text="{Binding ErrorMessage}"
@@ -46,17 +46,6 @@
                     <Label Text="{Binding StatusMessage}"
                            TextColor="{StaticResource TextMuted}"
                            FontSize="14" />
-
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                        <Button Text="Start Scan"
-                                Command="{Binding StartScanCommand}"
-                                IsEnabled="{Binding CanStartScan}" />
-
-                        <Button Grid.Column="1"
-                                Text="Stop"
-                                Command="{Binding StopScanCommand}"
-                                IsEnabled="{Binding CanStopScan}" />
-                    </Grid>
                 </VerticalStackLayout>
             </Border>
 
@@ -71,7 +60,7 @@
             <CollectionView ItemsSource="{Binding Devices}"
                             IsVisible="{Binding HasDevices}">
                 <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="models:EspDeviceInfo">
+                    <DataTemplate x:DataType="models:EspDeviceRow">
                         <Border BackgroundColor="{StaticResource CardBackground}"
                                 Stroke="{StaticResource CardStroke}"
                                 StrokeThickness="1"
@@ -101,11 +90,26 @@
                                        TextColor="{StaticResource TextMuted}"
                                        FontSize="12" />
 
-                                <Button Grid.Row="2"
-                                        Grid.ColumnSpan="2"
-                                        Text="Connect and Sync"
-                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectDeviceCommand}"
-                                        CommandParameter="{Binding .}" />
+                                <Grid Grid.Row="2"
+                                      Grid.ColumnSpan="2"
+                                      ColumnDefinitions="Auto,Auto" ColumnSpacing="8">
+                                    <Border Style="{StaticResource DashboardBadge}"
+                                            BackgroundColor="{StaticResource SoftBlue}">
+                                        <Label Text="{Binding AuthText}"
+                                               TextColor="{StaticResource TemperatureAccent}"
+                                               FontSize="11"
+                                               FontAttributes="Bold" />
+                                    </Border>
+
+                                    <Border Grid.Column="1"
+                                            Style="{StaticResource DashboardBadge}"
+                                            BackgroundColor="{StaticResource SoftNeutral}">
+                                        <Label Text="{Binding StatusText}"
+                                               TextColor="{StaticResource TextMuted}"
+                                               FontSize="11"
+                                               FontAttributes="Bold" />
+                                    </Border>
+                                </Grid>
                             </Grid>
                         </Border>
                     </DataTemplate>

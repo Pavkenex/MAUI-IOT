@@ -1,4 +1,5 @@
 using MAUI_IOT.Models;
+using MAUI_IOT.Protocol;
 
 namespace MAUI_IOT.Services;
 
@@ -29,8 +30,11 @@ public interface IEspBluetoothService
 
     Task DisconnectAsync();
 
+    Task<EspDeviceIdentity> ReadDeviceIdentityAsync(EspDeviceInfo device, CancellationToken cancellationToken = default);
+
     Task<EspSyncResult> SynchronizeAsync(
         EspDeviceInfo device,
+        EspDeviceIdentity identity,
         IProgress<EspSyncProgress>? progress = null,
         CancellationToken cancellationToken = default);
 }

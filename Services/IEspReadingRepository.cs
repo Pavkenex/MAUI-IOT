@@ -18,6 +18,10 @@ public interface IEspReadingRepository
 
     Task<IReadOnlyList<string>> GetDeviceIdsAsync();
 
+    Task SaveDeviceAsync(EspDeviceRecord device);
+
+    Task<IReadOnlyList<EspDeviceRecord>> GetDevicesAsync();
+
     Task<IReadOnlyList<EspReading>> GetPendingUploadsAsync(int limit = 200);
 
     Task MarkUploadedAsync(IReadOnlyList<EspReading> readings);

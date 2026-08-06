@@ -19,7 +19,7 @@ public sealed class EspReadingRepository : IEspReadingRepository
 
     private Task EnsureCreatedAsync()
     {
-        return _connection.CreateTablesAsync<EspReading, EspSyncCursor>();
+        return _connection.CreateTablesAsync<EspReading, EspSyncCursor, EspDeviceRecord>();
     }
 
     public async Task<bool> ExistsAsync(string deviceId, uint bootSessionId, uint readingId)
@@ -33,7 +33,19 @@ public sealed class EspReadingRepository : IEspReadingRepository
     public async Task<int> InsertIdempotentAsync(EspReading reading)
     {
         await EnsureCreatedAsync();
-        return await _connection.InsertOrIgnoreAsync(reading);
+        if (await ExistsAsync(reading.DeviceId, reading.BootSessionId, reading.ReadingId))
+        {
+            return 0;
+        }
+
+        try
+        {
+            return await _connection.InsertAsync(reading);
+        }
+        catch (SQLiteException ex) when (ex.Result == SQLite3.Result.Constraint)
+        {
+            return 0;
+        }
     }
 
     public async Task<IReadOnlyList<EspReading>> GetReadingsAsync(
@@ -86,6 +98,30 @@ public sealed class EspReadingRepository : IEspReadingRepository
         await EnsureCreatedAsync();
         var readings = await _connection.Table<EspReading>().ToListAsync();
         return readings.Select(r => r.DeviceId).Distinct().ToList();
+    }
+
+    public async Task SaveDeviceAsync(EspDeviceRecord device)
+    {
+        await EnsureCreatedAsync();
+        var existing = await _connection.Table<EspDeviceRecord>()
+            .Where(d => d.DeviceId == device.DeviceId)
+            .FirstOrDefaultAsync();
+        if (existing is null)
+        {
+            await _connection.InsertAsync(device);
+        }
+        else
+        {
+            existing.Name = device.Name;
+            existing.LastSeenAtUtc = device.LastSeenAtUtc;
+            await _connection.UpdateAsync(existing);
+        }
+    }
+
+    public async Task<IReadOnlyList<EspDeviceRecord>> GetDevicesAsync()
+    {
+        await EnsureCreatedAsync();
+        return await _connection.Table<EspDeviceRecord>().ToListAsync();
     }
 
     public async Task<IReadOnlyList<EspReading>> GetPendingUploadsAsync(int limit = 200)

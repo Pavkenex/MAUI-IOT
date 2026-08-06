@@ -11,6 +11,7 @@ Replace the manual BLE flow (Scan tab with Start Scan button, Sync tab with Conn
 
 - App: MAUI .NET 10, `Plugin.BLE` 3.2.1, `sqlite-net-pcl` 1.9.172.
 - Real readings already land in SQLite via `EspReadingRepository`; `EspBluetoothService` already implements connect/sync with cursor-based delta sync (`REQUEST_AFTER`), idempotent inserts, boot-session detection, and a 120 s synchronization timeout.
+- Working tree contains uncommitted fixes (advertisement-record detection in `IsEspDevice`, idempotent insert in `EspReadingRepository`, encoder cast, `ScanPageModel` navigation route). These are the baseline the plan builds on; the `IsEspDevice` fix directly affects auto-discovery correctness. Committing them is a separate decision (they are a teammate's merge fixes) — not part of this spec.
 - Dashboard and History tabs already read from `EspReadingRepository` (real data). Only Sensors + SensorDetail use the mock service (`MockSensorDataService`, registered in `MauiProgram.cs`).
 - Authorization must not depend on a network at this stage. An online ID database is future work; the design leaves a seam (`IDeviceAuthorizationService`).
 - No automated test framework exists in the project; verification is on-device via logcat and UI.
@@ -19,26 +20,28 @@ Replace the manual BLE flow (Scan tab with Start Scan button, Sync tab with Conn
 
 ### 1. `EspAutoSyncService` (new singleton service)
 
-The central loop. One instance, started once at app launch, running on a background task for the app's foreground lifetime.
+The central loop. One instance, started once at app launch, running on a background task for the app's foreground lifetime. It is the only caller of `SynchronizeAsync` after the Sync tab is deleted (the service keeps its single-flight `_syncGate` semantics).
 
-Behavior:
+Loop semantics — snapshot-based passes (matches the existing `ScanForDevicesAsync` API, which always stops the adapter scan when it returns):
 
-- Continuously scans for ESP devices (no fixed per-scan timeout; scan runs until stopped).
-- For each discovered ESP device, in order of RSSI:
-  1. If device is already connected, synced, or in cooldown for this device — skip.
-  2. Connect to the device.
-  3. Read the device identity.
-  4. Ask `IDeviceAuthorizationService.IsAuthorizedAsync(identity.DeviceId)`.
-     - Unauthorized → disconnect immediately, mark device `Ignored`, continue scanning. No data transfer.
+1. Request Bluetooth permission once at startup (`RequestBluetoothPermissionAsync`). If denied or Bluetooth is off, emit status and re-check on the next pass — the app never sits silently in "permission missing".
+2. Run one scan pass: `ScanForDevicesAsync(timeout: 10 s)` (scans stop between passes; `ConnectAsync` also stops any active scan, so pass-based flow avoids adapter contention).
+3. For each discovered ESP device, in order of RSSI:
+   - Skip if the device is currently syncing or in its 30 s cooldown.
+   - Connect to the device.
+   - Read its identity via a new `IEspBluetoothService.ReadDeviceIdentityAsync(EspDeviceInfo)` method (public identity-only read, extracted from the private `ReadIdentityAsync`).
+   - Ask `IDeviceAuthorizationService.IsAuthorizedAsync(identity.DeviceId)`.
+     - Unauthorized → disconnect immediately, mark device `Ignored`, continue with the next device. No data transfer.
      - Authorized → proceed.
-  5. Run `SynchronizeAsync` (existing protocol flow).
-  6. Disconnect.
-  7. Start a 30 s cooldown for that device (no reconnect/sync until it expires). Other devices remain connectable during the cooldown.
-- On failure at any step (connect error, sync error, connection lost): log, mark the device `Failed`, do not crash the loop; retry on a later pass.
-- If Bluetooth is off or permissions missing: emit status, keep retrying on subsequent passes.
+   - Run `SynchronizeAsync(device, identity, progress, token)` — a new overload that accepts the already-read identity and skips the duplicate identity read inside `RunSynchronizationAsync` (`RunSynchronizationAsync` keeps its identity-read when the overload is not used).
+   - Disconnect.
+   - Start a 30 s cooldown for that device. Other devices remain connectable during the cooldown.
+4. Brief pause, then back to step 2. First pass starts immediately at launch.
+
+On failure at any step (connect error, sync error, connection lost): log, mark the device `Failed`, do not crash the loop; retry on a later pass. The loop catches all exceptions from a pass.
 
 Observable state exposed for the Scan tab (via `ObservableObject`):
-- `Devices`: live list of discovered ESP devices with `AuthorizationStatus`, `SyncStatus`, and `LastSyncAt`.
+- `Devices`: `ObservableCollection<EspDeviceRow>` — a new row view model (not an extension of the positional `EspDeviceInfo` record, to avoid ripples into its `with` expressions and `CreateDeviceInfo`). Each row wraps `EspDeviceInfo` and adds `AuthorizationStatus` (Authorized / Ignored / Pending), `SyncStatus` (Idle / Connecting / Syncing / Failed / Last sync), and `LastSyncAt` (DateTimeOffset?).
 - `IsScanning`, `BluetoothStatusText`, `StatusMessage`.
 
 Starts once from `App.OnStart` (or AppShell constructor). Runs for the lifetime of the app; no stop/start UI.
@@ -63,6 +66,7 @@ public interface IDeviceAuthorizationService
   - Each row: device name, address, RSSI badge, status badge (Authorized / Syncing / Ignored / Failed / Last sync time).
   - Page loads data when appearing and updates via service events; the scan loop is app-wide, not tied to the page.
 - `ScanPageModel`: rewritten to consume `EspAutoSyncService` instead of driving scans itself. `SelectDeviceAsync`/navigation to sync page removed.
+- `DashboardPageModel` empty-state copy ("Use the Scan tab to connect to an ESP.") is stale — reworded to reference automatic discovery.
 
 ### 4. Sync tab removed
 
@@ -72,10 +76,11 @@ public interface IDeviceAuthorizationService
 
 ### 5. Sensors tab → real data
 
-- New `SensorDataService` (replacing `MockSensorDataService`) implementing the existing `ISensorDataService` against `EspReadingRepository`:
-  - `GetSensorsAsync`: one `SensorSummary` per device that has readings (derived from repository device list); value shows latest temperature/humidity.
-  - `GetSensorAsync(int)`: sensor summary by id.
-  - `GetReadingsAsync(int sensorId)`: reading history for the device from SQLite.
+- New `SensorDataService` (replacing `MockSensorDataService`) implementing the existing `ISensorDataService` against `EspReadingRepository`.
+- **Sensor model**: mirrors the current UI — temperature and humidity are separate sensors. Each device with readings yields two `SensorSummary` entries (one per metric). The mock had two hardcoded sensors; the real service derives them from the repository's device list (`GetDeviceIdsAsync`).
+- **Stable int id mapping**: `ISensorDataService` is keyed by `int sensorId`, but readings are keyed by string deviceId. The service derives `sensorId` deterministically (FNV-1a 32-bit hash of `"{deviceId}|temp"` / `"{deviceId}|hum"`), stable across launches. Reverse lookup (`GetSensorAsync(int)`, `GetReadingsAsync(int)`) rebuilds the mapping by iterating the repository's device list and recomputing hashes — a few devices, so this is cheap and stateless.
+- Population: `Name` = device display name; `Type` = "Temperature" / "Humidity"; `IsOnline` = latest reading exists (or recent); `Value` = latest metric value formatted (e.g., "24.5°C", "45%").
+- `GetReadingsAsync(sensorId)` returns the device's history for that single metric, `Value` formatted per metric, `RecordedAtUtc` as the timestamp (matches `SensorDetailPage` rendering of one value per row).
 - Delete `MockSensorDataService`; register `SensorDataService` in `MauiProgram.cs`.
 - `SensorsPage` / `SensorDetailPage` XAML unchanged — they consume `ISensorDataService`.
 

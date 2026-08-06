@@ -10,9 +10,9 @@
     <ScrollView>
         <VerticalStackLayout Padding="16,16,16,28" Spacing="16">
             <VerticalStackLayout Spacing="2">
-                <Label Text="ESP Field Scan"
+                <Label Text="ESP Discovery"
                        Style="{StaticResource PageTitleLabel}" />
-                <Label Text="Collect broadcasts from nearby ESP devices over BLE"
+                <Label Text="Find nearby ESP32 DHT22 loggers over Bluetooth Low Energy"
                        Style="{StaticResource PageSubtitleLabel}" />
             </VerticalStackLayout>
 
@@ -26,114 +26,61 @@
 
             <!-- Bluetooth Status Card -->
             <Border Style="{StaticResource DashboardCard}">
-                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="12" ColumnSpacing="14">
-                    <Label Grid.Row="0"
-                           Text="Bluetooth"
-                           TextColor="{StaticResource TextPrimary}"
-                           FontSize="18"
-                           FontAttributes="Bold" />
-
-                    <Border Grid.Row="0"
-                            Grid.Column="1"
-                            Style="{StaticResource DashboardBadge}"
-                            BackgroundColor="{StaticResource SoftBlue}">
-                        <Label Text="{Binding BluetoothStatusText}"
-                               TextColor="{StaticResource TemperatureAccent}"
-                               FontSize="11"
-                               FontAttributes="Bold" />
-                    </Border>
-
-                    <Label Grid.Row="1"
-                           Grid.ColumnSpan="2"
-                           Text="{Binding StatusMessage}"
-                           TextColor="{StaticResource TextMuted}"
-                           FontSize="14" />
-
-                    <Button Grid.Row="2"
-                            Grid.ColumnSpan="2"
-                            Text="Enable Bluetooth"
-                            Command="{Binding EnableBluetoothCommand}"
-                            IsEnabled="{Binding CanEnableBluetooth}" />
-                </Grid>
-            </Border>
-
-            <!-- Scan Controls -->
-            <Border Style="{StaticResource DashboardCard}">
-                <VerticalStackLayout Spacing="14">
+                <VerticalStackLayout Spacing="12">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
-                        <Label Text="BLE Broadcast Scan"
+                        <Label Text="Bluetooth"
                                TextColor="{StaticResource TextPrimary}"
                                FontSize="18"
                                FontAttributes="Bold" />
 
                         <Border Grid.Column="1"
                                 Style="{StaticResource DashboardBadge}"
-                                BackgroundColor="{StaticResource SoftNeutral}">
-                            <Label Text="{Binding TotalSessions, StringFormat='{0} sessions'}"
-                                   TextColor="{StaticResource TextMuted}"
+                                BackgroundColor="{StaticResource SoftBlue}">
+                            <Label Text="{Binding BluetoothStatusText}"
+                                   TextColor="{StaticResource TemperatureAccent}"
                                    FontSize="11"
                                    FontAttributes="Bold" />
                         </Border>
                     </Grid>
 
-                    <Label Text="Start a scan to discover nearby ESP devices broadcasting temperature, humidity, and metadata."
+                    <Label Text="{Binding StatusMessage}"
                            TextColor="{StaticResource TextMuted}"
                            FontSize="14" />
 
-                    <Button Text="Start Scan"
-                            Command="{Binding StartScanCommand}"
-                            IsEnabled="{Binding CanStartScan}" />
-                </VerticalStackLayout>
-            </Border>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <Button Text="Start Scan"
+                                Command="{Binding StartScanCommand}"
+                                IsEnabled="{Binding CanStartScan}" />
 
-            <!-- Latest Session Summary -->
-            <Border IsVisible="{Binding HasLatestSession}"
-                    Style="{StaticResource DashboardCard}">
-                <VerticalStackLayout Spacing="12"
-                                     x:DataType="pageModels:ScanPageModel">
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
-                        <Label Text="{Binding LatestSession.Name}"
-                               TextColor="{StaticResource TextPrimary}"
-                               FontSize="18"
-                               FontAttributes="Bold" />
-                        <Border Grid.Column="1"
-                                Style="{StaticResource DashboardBadge}"
-                                BackgroundColor="{StaticResource PositiveBadgeBackground}">
-                            <Label Text="{Binding LatestSession.BroadcastCount, StringFormat='{0} readings'}"
-                                   TextColor="{StaticResource PositiveBadgeText}"
-                                   FontSize="11"
-                                   FontAttributes="Bold" />
-                        </Border>
+                        <Button Grid.Column="1"
+                                Text="Stop"
+                                Command="{Binding StopScanCommand}"
+                                IsEnabled="{Binding CanStopScan}" />
                     </Grid>
-
-                    <Label Text="{Binding TotalBroadcasts, StringFormat='Total: {0} broadcasts collected across all sessions'}"
-                           TextColor="{StaticResource TextMuted}"
-                           FontSize="13" />
                 </VerticalStackLayout>
             </Border>
 
-            <!-- Broadcast List -->
-            <Label Text="ESP Broadcasts"
+            <!-- Discovered devices -->
+            <Label Text="Discovered ESP Devices"
                    TextColor="{StaticResource TextPrimary}"
                    FontSize="18"
                    FontAttributes="Bold"
-                   IsVisible="{Binding HasLatestSession}"
+                   IsVisible="{Binding HasDevices}"
                    Margin="0,8,0,0" />
 
-            <CollectionView ItemsSource="{Binding Broadcasts}"
-                            IsVisible="{Binding HasLatestSession}">
+            <CollectionView ItemsSource="{Binding Devices}"
+                            IsVisible="{Binding HasDevices}">
                 <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="models:EspBroadcastReading">
+                    <DataTemplate x:DataType="models:EspDeviceInfo">
                         <Border BackgroundColor="{StaticResource CardBackground}"
                                 Stroke="{StaticResource CardStroke}"
                                 StrokeThickness="1"
                                 StrokeShape="RoundRectangle 12"
                                 Padding="14"
                                 Margin="0,0,0,10">
-                            <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="8" ColumnSpacing="12">
-                                <!-- Device UID and Auth badge -->
+                            <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="8" ColumnSpacing="12">
                                 <Label Grid.Row="0"
-                                       Text="{Binding DeviceUid}"
+                                       Text="{Binding Name}"
                                        TextColor="{StaticResource TextPrimary}"
                                        FontSize="16"
                                        FontAttributes="Bold" />
@@ -142,52 +89,23 @@
                                         Grid.Column="1"
                                         Style="{StaticResource DashboardBadge}"
                                         BackgroundColor="{StaticResource SoftNeutral}">
-                                    <Label Text="{Binding IsAuthenticated, Converter={StaticResource BoolToAuthTextConverter}}"
+                                    <Label Text="{Binding Rssi, StringFormat='{0} dBm'}"
                                            TextColor="{StaticResource TextMuted}"
                                            FontSize="11"
                                            FontAttributes="Bold" />
                                 </Border>
 
-                                <!-- Device Label -->
                                 <Label Grid.Row="1"
                                        Grid.ColumnSpan="2"
-                                       Text="{Binding DeviceLabel}"
-                                       TextColor="{StaticResource TextPrimary}"
-                                       FontSize="14"
-                                       FontAttributes="Italic" />
+                                       Text="{Binding Address}"
+                                       TextColor="{StaticResource TextMuted}"
+                                       FontSize="12" />
 
-                                <!-- Measurements row -->
-                                <HorizontalStackLayout Grid.Row="2" Grid.ColumnSpan="2" Spacing="20">
-                                    <HorizontalStackLayout Spacing="4">
-                                        <Label Text="T:" TextColor="{StaticResource TemperatureAccent}" FontSize="13" FontAttributes="Bold" />
-                                        <Label Text="{Binding Temperature, StringFormat='{0:F1}°C'}" TextColor="{StaticResource TextPrimary}" FontSize="13" />
-                                    </HorizontalStackLayout>
-                                    <HorizontalStackLayout Spacing="4">
-                                        <Label Text="H:" TextColor="{StaticResource HumidityPurple}" FontSize="13" FontAttributes="Bold" />
-                                        <Label Text="{Binding Humidity, StringFormat='{0:F1}%'}" TextColor="{StaticResource TextPrimary}" FontSize="13" />
-                                    </HorizontalStackLayout>
-                                    <HorizontalStackLayout Spacing="4">
-                                        <Label Text="RSSI:" TextColor="{StaticResource TextMuted}" FontSize="13" />
-                                        <Label Text="{Binding SignalStrength, StringFormat='{0} dBm'}" TextColor="{StaticResource TextPrimary}" FontSize="13" />
-                                    </HorizontalStackLayout>
-                                </HorizontalStackLayout>
-
-                                <!-- GPS and Timestamp -->
-                                <HorizontalStackLayout Grid.Row="3" Grid.ColumnSpan="2" Spacing="20">
-                                    <Label TextColor="{StaticResource TextMuted}" FontSize="11">
-                                        <Label.FormattedText>
-                                            <FormattedString>
-                                                <Span Text="📍 " />
-                                                <Span Text="{Binding Latitude, StringFormat='{0:F4}'}" />
-                                                <Span Text=", " />
-                                                <Span Text="{Binding Longitude, StringFormat='{0:F4}'}" />
-                                            </FormattedString>
-                                        </Label.FormattedText>
-                                    </Label>
-                                    <Label Text="{Binding ReceivedAt, StringFormat='{0:HH:mm:ss}'}"
-                                           TextColor="{StaticResource TextMuted}"
-                                           FontSize="11" />
-                                </HorizontalStackLayout>
+                                <Button Grid.Row="2"
+                                        Grid.ColumnSpan="2"
+                                        Text="Connect and Sync"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectDeviceCommand}"
+                                        CommandParameter="{Binding .}" />
                             </Grid>
                         </Border>
                     </DataTemplate>

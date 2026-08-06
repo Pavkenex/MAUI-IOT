@@ -1,0 +1,134 @@
+using MAUI_IOT.Models;
+using Microsoft.Maui.Storage;
+using SQLite;
+
+namespace MAUI_IOT.Services;
+
+public sealed class EspReadingRepository : IEspReadingRepository
+{
+    private const string DatabaseFileName = "esp_readings.db3";
+    private readonly SQLiteAsyncConnection _connection;
+
+    public EspReadingRepository()
+    {
+        var databasePath = Path.Combine(FileSystem.AppDataDirectory, DatabaseFileName);
+        _connection = new SQLiteAsyncConnection(
+            databasePath,
+            SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.SharedCache);
+    }
+
+    private Task EnsureCreatedAsync()
+    {
+        return _connection.CreateTablesAsync<EspReading, EspSyncCursor>();
+    }
+
+    public async Task<bool> ExistsAsync(string deviceId, uint bootSessionId, uint readingId)
+    {
+        await EnsureCreatedAsync();
+        return await _connection.Table<EspReading>()
+            .Where(r => r.DeviceId == deviceId && r.BootSessionId == bootSessionId && r.ReadingId == readingId)
+            .CountAsync() > 0;
+    }
+
+    public async Task<int> InsertIdempotentAsync(EspReading reading)
+    {
+        await EnsureCreatedAsync();
+        return await _connection.InsertOrIgnoreAsync(reading);
+    }
+
+    public async Task<IReadOnlyList<EspReading>> GetReadingsAsync(
+        string? deviceId = null,
+        uint? bootSessionId = null,
+        int limit = 200)
+    {
+        await EnsureCreatedAsync();
+        var query = _connection.Table<EspReading>();
+        if (deviceId is not null)
+        {
+            query = query.Where(r => r.DeviceId == deviceId);
+        }
+        if (bootSessionId is not null)
+        {
+            query = query.Where(r => r.BootSessionId == bootSessionId);
+        }
+
+        return await query
+            .OrderByDescending(r => r.RecordedAtUtc)
+            .Take(limit)
+            .ToListAsync();
+    }
+
+    public async Task<EspReading?> GetLatestReadingAsync(string deviceId)
+    {
+        await EnsureCreatedAsync();
+        return await _connection.Table<EspReading>()
+            .Where(r => r.DeviceId == deviceId)
+            .OrderByDescending(r => r.RecordedAtUtc)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<int> GetReadingCountAsync()
+    {
+        await EnsureCreatedAsync();
+        return await _connection.Table<EspReading>().CountAsync();
+    }
+
+    public async Task<int> GetPendingUploadCountAsync()
+    {
+        await EnsureCreatedAsync();
+        return await _connection.Table<EspReading>()
+            .Where(r => !r.IsUploaded)
+            .CountAsync();
+    }
+
+    public async Task<IReadOnlyList<string>> GetDeviceIdsAsync()
+    {
+        await EnsureCreatedAsync();
+        var readings = await _connection.Table<EspReading>().ToListAsync();
+        return readings.Select(r => r.DeviceId).Distinct().ToList();
+    }
+
+    public async Task<IReadOnlyList<EspReading>> GetPendingUploadsAsync(int limit = 200)
+    {
+        await EnsureCreatedAsync();
+        return await _connection.Table<EspReading>()
+            .Where(r => !r.IsUploaded)
+            .OrderBy(r => r.RecordedAtUtc)
+            .Take(limit)
+            .ToListAsync();
+    }
+
+    public async Task MarkUploadedAsync(IReadOnlyList<EspReading> readings)
+    {
+        await EnsureCreatedAsync();
+        foreach (var reading in readings)
+        {
+            reading.IsUploaded = true;
+            reading.UploadedAtUtc = DateTimeOffset.UtcNow;
+        }
+
+        await _connection.UpdateAllAsync(readings);
+    }
+
+    public async Task<EspSyncCursor?> GetCursorAsync(string deviceId)
+    {
+        await EnsureCreatedAsync();
+        return await _connection.Table<EspSyncCursor>()
+            .Where(c => c.DeviceId == deviceId)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task SaveCursorAsync(EspSyncCursor cursor)
+    {
+        await EnsureCreatedAsync();
+        var existing = await GetCursorAsync(cursor.DeviceId);
+        if (existing is null)
+        {
+            await _connection.InsertAsync(cursor);
+        }
+        else
+        {
+            await _connection.UpdateAsync(cursor);
+        }
+    }
+}

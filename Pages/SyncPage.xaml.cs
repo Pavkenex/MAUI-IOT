@@ -18,4 +18,13 @@ public partial class SyncPage : ContentPage
         base.OnAppearing();
         await _pageModel.LoadStatusCommand.ExecuteAsync(null);
     }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        if (_pageModel.IsSyncing)
+        {
+            _pageModel.CancelSyncCommand.Execute(null);
+        }
+    }
 }

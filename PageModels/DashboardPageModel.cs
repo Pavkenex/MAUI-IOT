@@ -3,21 +3,16 @@ using CommunityToolkit.Mvvm.Input;
 using MAUI_IOT.Models;
 using MAUI_IOT.Services;
 using System.Collections.ObjectModel;
-using System.Globalization;
 
 namespace MAUI_IOT.PageModels
 {
     public partial class DashboardPageModel : ObservableObject
     {
-        private readonly ISensorDataService _sensorService;
-        private readonly IBluetoothScanService _scanService;
+        private readonly IEspReadingRepository _repository;
 
-        public DashboardPageModel(
-            ISensorDataService sensorService,
-            IBluetoothScanService scanService)
+        public DashboardPageModel(IEspReadingRepository repository)
         {
-            _sensorService = sensorService;
-            _scanService = scanService;
+            _repository = repository;
         }
 
         [ObservableProperty]
@@ -31,7 +26,6 @@ namespace MAUI_IOT.PageModels
 
         public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
 
-        // Demo sensor readings (from mock sensor service)
         [ObservableProperty]
         private string temperature = "--";
         [ObservableProperty]
@@ -39,60 +33,29 @@ namespace MAUI_IOT.PageModels
         [ObservableProperty]
         private string lastUpdated = "Last updated --";
 
-        // Scan context
         [ObservableProperty]
-        private int totalScanSessions;
+        private int totalReadings;
 
         [ObservableProperty]
-        private int totalBroadcasts;
+        private int totalDevices;
 
         [ObservableProperty]
-        private int uniqueDevices;
+        private int pendingUploads;
 
         [ObservableProperty]
-        private string scanSummary = "No scans yet";
-
-        // Latest broadcast data (multi-device)
-        [ObservableProperty]
-        private string latestDeviceLabel = "--";
+        private string scanSummary = "No readings stored yet. Use the Scan tab to connect to an ESP.";
 
         [ObservableProperty]
-        private string latestDeviceUid = "--";
+        private string latestDeviceId = "--";
 
         [ObservableProperty]
-        private string latestTemperature = "--";
+        private string trendTitle = "Recent Measurements";
 
         [ObservableProperty]
-        private string latestHumidity = "--";
+        private string trendSubtitle = "Latest 7 readings";
 
         [ObservableProperty]
-        private string latestSignal = "--";
-
-        // GPS data from latest broadcast
-        [ObservableProperty]
-        private string gpsTitle = "Latest ESP Device GPS";
-
-        [ObservableProperty]
-        private string latitude = "--";
-
-        [ObservableProperty]
-        private string longitude = "--";
-
-        [ObservableProperty]
-        private string altitude = "N/A";
-
-        [ObservableProperty]
-        private string signalStatus = "Signal: --";
-
-        // Trend
-        [ObservableProperty]
-        private string trendTitle = "Sensor Trends";
-
-        [ObservableProperty]
-        private string trendSubtitle = "Latest 7 measurements";
-
-        [ObservableProperty]
-        private string selectedTrendRange = "Live";
+        private string selectedTrendRange = "Last 7";
 
         [ObservableProperty]
         private string trendTemperature = "--";
@@ -113,11 +76,7 @@ namespace MAUI_IOT.PageModels
                 ErrorMessage = null;
                 OnPropertyChanged(nameof(HasError));
 
-                // Load sensor data (existing mock demo data)
-                await LoadSensorDataAsync();
-
-                // Load scan data
-                await LoadScanDataAsync();
+                await LoadStoredDataAsync();
 
                 LastUpdated = $"Last updated {DateTime.Now:HH:mm}";
             }
@@ -133,121 +92,64 @@ namespace MAUI_IOT.PageModels
             }
         }
 
-        private async Task LoadSensorDataAsync()
+        private async Task LoadStoredDataAsync()
         {
-            var sensors = await _sensorService.GetSensorsAsync();
-            var temperatureSensor = FindSensor(sensors, "Temperature");
-            var humiditySensor = FindSensor(sensors, "Humidity");
-            var temperatureReadings = temperatureSensor is null
-                ? []
-                : LatestReadings(await _sensorService.GetReadingsAsync(temperatureSensor.Id));
-            var humidityReadings = humiditySensor is null
-                ? []
-                : LatestReadings(await _sensorService.GetReadingsAsync(humiditySensor.Id));
+            TotalReadings = await _repository.GetReadingCountAsync();
+            PendingUploads = await _repository.GetPendingUploadCountAsync();
+            var deviceIds = await _repository.GetDeviceIdsAsync();
+            TotalDevices = deviceIds.Count;
 
-            Temperature = temperatureReadings.LastOrDefault()?.Value ?? temperatureSensor?.LatestReading ?? "--";
-            Humidity = humidityReadings.LastOrDefault()?.Value ?? humiditySensor?.LatestReading ?? "--";
+            if (TotalReadings == 0 || deviceIds.Count == 0)
+            {
+                ScanSummary = "No readings stored yet. Use the Scan tab to connect to an ESP.";
+                LatestDeviceId = "--";
+                Temperature = "--";
+                Humidity = "--";
+                TrendTemperature = "--";
+                TrendHumidity = "--";
+                TrendBars.Clear();
+                return;
+            }
+
+            ScanSummary = $"{TotalReadings} reading(s) stored, {PendingUploads} pending cloud upload, {TotalDevices} ESP device(s).";
+
+            var deviceId = deviceIds.First();
+            var readings = await _repository.GetReadingsAsync(deviceId, limit: 7);
+            var latest = readings.FirstOrDefault();
+
+            if (latest is null)
+            {
+                return;
+            }
+
+            LatestDeviceId = latest.DeviceId;
+            Temperature = $"{latest.TemperatureCelsius:F1}°C";
+            Humidity = $"{latest.HumidityPercent:F1}%";
             TrendTemperature = Temperature;
             TrendHumidity = Humidity;
-            LoadTrendBars(temperatureReadings, humidityReadings);
+
+            LoadTrendBars(readings.OrderBy(r => r.RecordedAtUtc).ToList());
         }
 
-        private async Task LoadScanDataAsync()
-        {
-            var sessions = await _scanService.GetScanSessionsAsync();
-            TotalScanSessions = sessions.Count;
-            TotalBroadcasts = sessions.Sum(s => s.BroadcastCount);
-            UniqueDevices = sessions
-                .SelectMany(s => s.Broadcasts)
-                .Select(b => b.DeviceUid)
-                .Distinct()
-                .Count();
-
-            if (TotalBroadcasts > 0)
-            {
-                ScanSummary = $"{TotalScanSessions} session(s), {UniqueDevices} ESP device(s), {TotalBroadcasts} broadcast(s)";
-
-                // Take latest broadcast from most recent session
-                var latestSession = sessions.OrderByDescending(s => s.StartedAt).First();
-                var latestBroadcast = latestSession.Broadcasts
-                    .OrderByDescending(b => b.ReceivedAt)
-                    .First();
-
-                LatestDeviceLabel = latestBroadcast.DeviceLabel;
-                LatestDeviceUid = latestBroadcast.DeviceUid;
-                LatestTemperature = $"{latestBroadcast.Temperature:F1}°C";
-                LatestHumidity = $"{latestBroadcast.Humidity:F1}%";
-                LatestSignal = $"{latestBroadcast.SignalStrength} dBm";
-
-                Latitude = $"{latestBroadcast.Latitude:F6}° N";
-                Longitude = $"{latestBroadcast.Longitude:F6}° W";
-                SignalStatus = latestBroadcast.IsAuthenticated
-                    ? $"Trusted ({latestBroadcast.DeviceUid})"
-                    : $"Unknown ({latestBroadcast.DeviceUid})";
-
-                GpsTitle = $"{latestBroadcast.DeviceUid} GPS";
-            }
-            else
-            {
-                ScanSummary = "No scans yet. Go to the Scan tab and start a BLE scan.";
-                LatestDeviceLabel = "--";
-                LatestDeviceUid = "--";
-                LatestTemperature = "--";
-                LatestHumidity = "--";
-                LatestSignal = "--";
-                Latitude = "--";
-                Longitude = "--";
-                SignalStatus = "Signal: --";
-                GpsTitle = "ESP Device GPS";
-            }
-        }
-
-        private static SensorSummary? FindSensor(IReadOnlyList<SensorSummary> sensors, string namePart)
-        {
-            return sensors.FirstOrDefault(sensor =>
-                sensor.Name.Contains(namePart, StringComparison.OrdinalIgnoreCase) ||
-                sensor.Type.Contains(namePart, StringComparison.OrdinalIgnoreCase));
-        }
-
-        private static IReadOnlyList<Reading> LatestReadings(IReadOnlyList<Reading> readings)
-        {
-            return readings
-                .OrderBy(reading => reading.Timestamp)
-                .TakeLast(7)
-                .ToList();
-        }
-
-        private void LoadTrendBars(IReadOnlyList<Reading> temperatureReadings, IReadOnlyList<Reading> humidityReadings)
+        private void LoadTrendBars(IReadOnlyList<EspReading> readings)
         {
             TrendBars.Clear();
 
-            var temperatureValues = temperatureReadings.Select(r => ParseNumber(r.Value)).ToList();
-            var humidityValues = humidityReadings.Select(r => ParseNumber(r.Value)).ToList();
-            var count = Math.Max(temperatureValues.Count, humidityValues.Count);
-
-            for (var index = 0; index < count; index++)
+            if (readings.Count == 0)
             {
-                var label = index < temperatureReadings.Count
-                    ? temperatureReadings[index].Timestamp.ToString("HH:mm")
-                    : humidityReadings[index].Timestamp.ToString("HH:mm");
+                return;
+            }
 
+            var temperatureValues = readings.Select(r => r.TemperatureCelsius).ToList();
+            var humidityValues = readings.Select(r => r.HumidityPercent).ToList();
+
+            for (var index = 0; index < readings.Count; index++)
+            {
                 TrendBars.Add(new TrendBar(
                     NormalizeHeight(temperatureValues, index),
                     NormalizeHeight(humidityValues, index),
-                    label));
+                    readings[index].RecordedAtUtc.ToLocalTime().DateTime.ToString("HH:mm")));
             }
-        }
-
-        private static double ParseNumber(string value)
-        {
-            var numericText = new string(value
-                .Where(c => char.IsDigit(c) || c == '.' || c == ',' || c == '-')
-                .ToArray())
-                .Replace(',', '.');
-
-            return double.TryParse(numericText, NumberStyles.Number, CultureInfo.InvariantCulture, out var number)
-                ? number
-                : 0;
         }
 
         private static double NormalizeHeight(IReadOnlyList<double> values, int index)

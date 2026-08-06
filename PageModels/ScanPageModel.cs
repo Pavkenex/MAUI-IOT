@@ -8,11 +8,12 @@ namespace MAUI_IOT.PageModels;
 
 public partial class ScanPageModel : ObservableObject
 {
-    private readonly IBluetoothScanService _bluetoothScanService;
+    private readonly IEspBluetoothService _bluetoothService;
+    private CancellationTokenSource? _scanCts;
 
-    public ScanPageModel(IBluetoothScanService bluetoothScanService)
+    public ScanPageModel(IEspBluetoothService bluetoothService)
     {
-        _bluetoothScanService = bluetoothScanService;
+        _bluetoothService = bluetoothService;
     }
 
     [ObservableProperty]
@@ -22,99 +23,93 @@ public partial class ScanPageModel : ObservableObject
     private bool isBluetoothEnabled;
 
     [ObservableProperty]
-    private string statusMessage = "Bluetooth is disabled.";
+    private bool isScanning;
+
+    [ObservableProperty]
+    private string statusMessage = "Checking Bluetooth state...";
 
     [ObservableProperty]
     private string? errorMessage;
 
-    [ObservableProperty]
-    private ScanSession? latestSession;
-
-    [ObservableProperty]
-    private int totalSessions;
-
-    [ObservableProperty]
-    private int totalBroadcasts;
+    public ObservableCollection<EspDeviceInfo> Devices { get; } = [];
 
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
-    public bool HasLatestSession => LatestSession is not null;
-    public bool CanStartScan => IsBluetoothEnabled && !IsBusy;
-    public bool CanEnableBluetooth => !IsBluetoothEnabled && !IsBusy;
-
+    public bool HasDevices => Devices.Count > 0;
+    public bool CanStartScan => IsBluetoothEnabled && !IsBusy && !IsScanning;
+    public bool CanStopScan => IsScanning;
     public string BluetoothStatusText => IsBluetoothEnabled ? "Bluetooth enabled" : "Bluetooth disabled";
-
-    public ObservableCollection<EspBroadcastReading> Broadcasts { get; } = [];
 
     [RelayCommand]
     private async Task LoadStatusAsync()
     {
-        IsBluetoothEnabled = await _bluetoothScanService.IsBluetoothEnabledAsync();
-        StatusMessage = IsBluetoothEnabled
-            ? "Bluetooth is enabled. Start a scan to collect ESP broadcasts."
-            : "Bluetooth is disabled. Enable Bluetooth to begin scanning.";
-        await LoadHistorySummaryAsync();
-        NotifyStateChanged();
-    }
+        var granted = await _bluetoothService.RequestBluetoothPermissionAsync();
+        IsBluetoothEnabled = await _bluetoothService.IsBluetoothEnabledAsync();
 
-    [RelayCommand]
-    private async Task EnableBluetoothAsync()
-    {
-        if (IsBusy || IsBluetoothEnabled)
-            return;
-
-        await RunAsync(async () =>
+        if (!granted)
         {
-            StatusMessage = "Enabling Bluetooth...";
-            await _bluetoothScanService.EnableBluetoothAsync();
-            IsBluetoothEnabled = true;
-            StatusMessage = "Bluetooth enabled. Tap 'Start Scan' to collect ESP broadcasts.";
-        });
+            ErrorMessage = "Bluetooth permission denied. Grant it in Settings to scan for ESP devices.";
+            NotifyStateChanged();
+            return;
+        }
+
+        if (!IsBluetoothEnabled)
+        {
+            StatusMessage = "Bluetooth is disabled. Enable it in system settings, then tap Start Scan.";
+        }
+        else
+        {
+            StatusMessage = Devices.Count > 0
+                ? $"Ready. {Devices.Count} ESP device(s) discovered."
+                : "Bluetooth is enabled. Tap Start Scan to discover ESP32 DHT22 devices.";
+        }
+
+        ErrorMessage = null;
+        NotifyStateChanged();
     }
 
     [RelayCommand]
     private async Task StartScanAsync()
     {
-        if (IsBusy || !IsBluetoothEnabled)
-            return;
-
-        await RunAsync(async () =>
+        if (IsBusy || !IsBluetoothEnabled || IsScanning)
         {
-            StatusMessage = "Scanning for nearby ESP devices...";
-            LatestSession = await _bluetoothScanService.RunMockScanAsync();
-            StatusMessage = $"Scan complete. Received {LatestSession.BroadcastCount} broadcasts from {LatestSession.Broadcasts.Select(b => b.DeviceUid).Distinct().Count()} devices.";
-            await LoadHistorySummaryAsync();
-            PopulateBroadcasts();
-        });
-    }
-
-    private void PopulateBroadcasts()
-    {
-        Broadcasts.Clear();
-        if (LatestSession is null)
             return;
-
-        foreach (var broadcast in LatestSession.Broadcasts.OrderByDescending(b => b.ReceivedAt))
-        {
-            Broadcasts.Add(broadcast);
         }
-    }
 
-    private async Task LoadHistorySummaryAsync()
-    {
-        var sessions = await _bluetoothScanService.GetScanSessionsAsync();
-        TotalSessions = sessions.Count;
-        TotalBroadcasts = sessions.Sum(s => s.BroadcastCount);
-    }
-
-    private async Task RunAsync(Func<Task> action)
-    {
         try
         {
             IsBusy = true;
+            IsScanning = true;
             ErrorMessage = null;
             NotifyStateChanged();
 
-            await action();
+            Devices.Clear();
+            StatusMessage = "Scanning for ESP32 DHT22 devices...";
+
+            _scanCts = new CancellationTokenSource();
+            var progress = new Progress<EspDeviceInfo>(device =>
+            {
+                var index = IndexOf(device.Id);
+                if (index < 0)
+                {
+                    Devices.Add(device);
+                }
+                else
+                {
+                    Devices[index] = device;
+                }
+            });
+
+            var devices = await _bluetoothService.ScanForDevicesAsync(
+                progress,
+                cancellationToken: _scanCts.Token);
+
+            StatusMessage = devices.Count == 0
+                ? "Scan finished. No DHT22 ESP devices found nearby."
+                : $"Scan finished. Found {devices.Count} ESP device(s).";
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "Scan stopped.";
         }
         catch (Exception ex)
         {
@@ -122,17 +117,52 @@ public partial class ScanPageModel : ObservableObject
         }
         finally
         {
+            IsScanning = false;
             IsBusy = false;
+            _scanCts = null;
             NotifyStateChanged();
         }
+    }
+
+    [RelayCommand]
+    private async Task StopScanAsync()
+    {
+        _scanCts?.Cancel();
+        await _bluetoothService.StopScanAsync();
+        StatusMessage = "Stopping scan...";
+        NotifyStateChanged();
+    }
+
+    [RelayCommand]
+    private async Task SelectDeviceAsync(EspDeviceInfo device)
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        await Shell.Current.GoToAsync($"sync?deviceId={device.Id}");
+    }
+
+    private int IndexOf(string id)
+    {
+        for (var i = 0; i < Devices.Count; i++)
+        {
+            if (Devices[i].Id == id)
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     private void NotifyStateChanged()
     {
         OnPropertyChanged(nameof(HasError));
-        OnPropertyChanged(nameof(HasLatestSession));
+        OnPropertyChanged(nameof(HasDevices));
         OnPropertyChanged(nameof(CanStartScan));
-        OnPropertyChanged(nameof(CanEnableBluetooth));
+        OnPropertyChanged(nameof(CanStopScan));
         OnPropertyChanged(nameof(BluetoothStatusText));
     }
 }

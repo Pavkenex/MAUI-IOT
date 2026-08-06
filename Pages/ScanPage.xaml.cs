@@ -18,4 +18,13 @@ public partial class ScanPage : ContentPage
         base.OnAppearing();
         await _pageModel.LoadStatusCommand.ExecuteAsync(null);
     }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        if (_pageModel.IsScanning)
+        {
+            _pageModel.StopScanCommand.Execute(null);
+        }
+    }
 }

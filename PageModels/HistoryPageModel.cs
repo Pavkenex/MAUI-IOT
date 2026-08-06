@@ -8,11 +8,11 @@ namespace MAUI_IOT.PageModels;
 
 public partial class HistoryPageModel : ObservableObject
 {
-    private readonly IBluetoothScanService _bluetoothScanService;
+    private readonly IEspReadingRepository _repository;
 
-    public HistoryPageModel(IBluetoothScanService bluetoothScanService)
+    public HistoryPageModel(IEspReadingRepository repository)
     {
-        _bluetoothScanService = bluetoothScanService;
+        _repository = repository;
     }
 
     [ObservableProperty]
@@ -23,15 +23,13 @@ public partial class HistoryPageModel : ObservableObject
 
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
-    public ObservableCollection<ScanSessionSummary> Sessions { get; } = [];
-
-    public ObservableCollection<EspBroadcastReading> RecentBroadcasts { get; } = [];
+    [ObservableProperty]
+    private bool hasReadings;
 
     [ObservableProperty]
-    private bool hasSessions;
+    private int totalReadings;
 
-    [ObservableProperty]
-    private int totalBroadcasts;
+    public ObservableCollection<EspReadingView> Readings { get; } = [];
 
     [RelayCommand]
     private async Task LoadHistoryAsync()
@@ -45,39 +43,15 @@ public partial class HistoryPageModel : ObservableObject
             ErrorMessage = null;
             OnPropertyChanged(nameof(HasError));
 
-            var sessions = await _bluetoothScanService.GetScanSessionsAsync();
-            Sessions.Clear();
-            RecentBroadcasts.Clear();
+            var readings = await _repository.GetReadingsAsync(limit: 200);
+            Readings.Clear();
 
-            HasSessions = sessions.Count > 0;
-            TotalBroadcasts = sessions.Sum(s => s.BroadcastCount);
+            HasReadings = readings.Count > 0;
+            TotalReadings = readings.Count;
 
-            foreach (var session in sessions)
+            foreach (var reading in readings)
             {
-                var deviceCount = session.Broadcasts.Select(b => b.DeviceUid).Distinct().Count();
-                var latestTime = session.Broadcasts.Count > 0
-                    ? session.Broadcasts.Max(b => b.ReceivedAt)
-                    : session.StartedAt;
-
-                Sessions.Add(new ScanSessionSummary(
-                    session.Id,
-                    session.Name,
-                    session.StartedAt,
-                    latestTime,
-                    session.BroadcastCount,
-                    deviceCount));
-            }
-
-            // Load recent broadcasts across all sessions
-            var allBroadcasts = sessions
-                .SelectMany(s => s.Broadcasts)
-                .OrderByDescending(b => b.ReceivedAt)
-                .Take(20)
-                .ToList();
-
-            foreach (var broadcast in allBroadcasts)
-            {
-                RecentBroadcasts.Add(broadcast);
+                Readings.Add(EspReadingView.From(reading));
             }
         }
         catch (Exception ex)
@@ -91,11 +65,3 @@ public partial class HistoryPageModel : ObservableObject
         }
     }
 }
-
-public sealed record ScanSessionSummary(
-    Guid Id,
-    string Name,
-    DateTime StartedAt,
-    DateTime LatestBroadcastAt,
-    int BroadcastCount,
-    int DeviceCount);

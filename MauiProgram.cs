@@ -24,11 +24,13 @@ namespace MAUI_IOT
 
             // Services
             builder.Services.AddSingleton<ISensorDataService, MockSensorDataService>();
-            builder.Services.AddSingleton<IBluetoothScanService, MockBluetoothScanService>();
+            builder.Services.AddSingleton<IEspReadingRepository, EspReadingRepository>();
+            builder.Services.AddSingleton<IEspBluetoothService, EspBluetoothService>();
 
             // Page models
             builder.Services.AddTransient<DashboardPageModel>();
             builder.Services.AddTransient<ScanPageModel>();
+            builder.Services.AddTransient<SyncPageModel>();
             builder.Services.AddTransient<SensorsPageModel>();
             builder.Services.AddTransient<SensorDetailPageModel>();
             builder.Services.AddTransient<HistoryPageModel>();
@@ -36,6 +38,7 @@ namespace MAUI_IOT
             // Pages
             builder.Services.AddTransient<DashboardPage>();
             builder.Services.AddTransient<ScanPage>();
+            builder.Services.AddTransient<SyncPage>();
             builder.Services.AddTransient<SensorsPage>();
             builder.Services.AddTransient<SensorDetailPage>();
             builder.Services.AddTransient<HistoryPage>();

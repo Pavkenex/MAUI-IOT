@@ -41,6 +41,8 @@
     <Color x:Key="StableBadgeText">#8A4B1D</Color>
     <Color x:Key="PositiveBadgeBackground">#E4F6EE</Color>
     <Color x:Key="PositiveBadgeText">#087A55</Color>
+    <Color x:Key="WarningBackground">#FDF3E3</Color>
+    <Color x:Key="WarningText">#8A4B1D</Color>
 
     <Color x:Key="GpsCardBackground">#DCEBFF</Color>
     <Color x:Key="GpsAccent">#0B4FA3</Color>

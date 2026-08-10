@@ -12,6 +12,7 @@ namespace MAUI_IOT.PageModels
     public partial class SensorsPageModel : ObservableObject
     {
         private readonly ISensorDataService _sensorDataService;
+        private bool _isNavigating;
 
         public SensorsPageModel(ISensorDataService sensorDataService)
         {
@@ -73,7 +74,18 @@ namespace MAUI_IOT.PageModels
         [RelayCommand]
         private async Task OpenSensorAsync(SensorSummary sensor)
         {
-            await Shell.Current.GoToAsync($"sensor?id={sensor.Id}");
+            if (_isNavigating)
+                return;
+
+            _isNavigating = true;
+            try
+            {
+                await Shell.Current.GoToAsync($"sensor?id={sensor.Id}");
+            }
+            finally
+            {
+                _isNavigating = false;
+            }
         }
 
     }

@@ -29,6 +29,15 @@ public partial class HistoryPageModel : ObservableObject
     [ObservableProperty]
     private int totalReadings;
 
+    [ObservableProperty]
+    private int totalDevices;
+
+    [ObservableProperty]
+    private int pendingUploads;
+
+    [ObservableProperty]
+    private string storageSummary = "No readings stored yet. Readings are downloaded automatically from nearby ESPs.";
+
     public ObservableCollection<EspReadingView> Readings { get; } = [];
 
     [RelayCommand]
@@ -47,12 +56,19 @@ public partial class HistoryPageModel : ObservableObject
             Readings.Clear();
 
             HasReadings = readings.Count > 0;
-            TotalReadings = readings.Count;
 
             foreach (var reading in readings)
             {
                 Readings.Add(EspReadingView.From(reading));
             }
+
+            var deviceIds = await _repository.GetDeviceIdsAsync();
+            TotalReadings = await _repository.GetReadingCountAsync();
+            TotalDevices = deviceIds.Count;
+            PendingUploads = await _repository.GetPendingUploadCountAsync();
+            StorageSummary = TotalReadings == 0
+                ? "No readings stored yet. Readings are downloaded automatically from nearby ESPs."
+                : $"{TotalReadings} reading(s) stored across {TotalDevices} ESP device(s).";
         }
         catch (Exception ex)
         {

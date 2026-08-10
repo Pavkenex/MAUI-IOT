@@ -27,6 +27,7 @@ namespace MAUI_IOT
             builder.Services.AddSingleton<IEspReadingRepository, EspReadingRepository>();
             builder.Services.AddSingleton<IEspBluetoothService, EspBluetoothService>();
             builder.Services.AddSingleton<IDeviceAuthorizationService, AllowAllDeviceAuthorizationService>();
+            builder.Services.AddSingleton<IDeviceLocationService, DeviceLocationService>();
             builder.Services.AddSingleton<EspAutoSyncService>();
 
             // Page models

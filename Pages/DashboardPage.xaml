@@ -23,45 +23,6 @@
                             VerticalOptions="Center" />
                 </Grid>
 
-                <!-- Storage Summary Card -->
-                <Border Style="{StaticResource DashboardCard}">
-                    <VerticalStackLayout Spacing="8">
-                        <Label Text="Local Storage Summary"
-                               TextColor="{StaticResource TextPrimary}"
-                               FontSize="16"
-                               FontAttributes="Bold" />
-                        <Label Text="{Binding ScanSummary}"
-                               TextColor="{StaticResource TextMuted}"
-                               FontSize="13" />
-                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
-                            <VerticalStackLayout Spacing="2">
-                                <Label Text="READINGS"
-                                       Style="{StaticResource MetricTitleLabel}" />
-                                <Label Text="{Binding TotalReadings}"
-                                       TextColor="{StaticResource TemperatureAccent}"
-                                       FontSize="20"
-                                       FontAttributes="Bold" />
-                            </VerticalStackLayout>
-                            <VerticalStackLayout Grid.Column="1" Spacing="2">
-                                <Label Text="DEVICES"
-                                       Style="{StaticResource MetricTitleLabel}" />
-                                <Label Text="{Binding TotalDevices}"
-                                       TextColor="{StaticResource HumidityAccent}"
-                                       FontSize="20"
-                                       FontAttributes="Bold" />
-                            </VerticalStackLayout>
-                            <VerticalStackLayout Grid.Column="2" Spacing="2">
-                                <Label Text="PENDING"
-                                       Style="{StaticResource MetricTitleLabel}" />
-                                <Label Text="{Binding PendingUploads}"
-                                       TextColor="{StaticResource GpsAccent}"
-                                       FontSize="20"
-                                       FontAttributes="Bold" />
-                            </VerticalStackLayout>
-                        </Grid>
-                    </VerticalStackLayout>
-                </Border>
-
                 <ActivityIndicator IsRunning="{Binding IsBusy}"
                                    IsVisible="{Binding IsBusy}"
                                    HeightRequest="22" />
@@ -88,10 +49,15 @@
                                        FontSize="22"
                                        FontAttributes="Bold"
                                        TextColor="{StaticResource TextPrimary}"
-                                       LineBreakMode="WordWrap" />
+                                       LineBreakMode="TailTruncation"
+                                       MaxLines="2"
+                                       VerticalOptions="Center" />
                             </HorizontalStackLayout>
 
-                            <VerticalStackLayout Grid.Column="1" Spacing="2" HorizontalOptions="End">
+                            <VerticalStackLayout Grid.Column="1"
+                                                 Spacing="2"
+                                                 HorizontalOptions="End"
+                                                 MaximumWidthRequest="130">
                                 <Label Text="DEVICE"
                                        Style="{StaticResource MetricTitleLabel}"
                                        HorizontalTextAlignment="End" />
@@ -120,6 +86,34 @@
                                        FontAttributes="Bold" />
                             </VerticalStackLayout>
                         </Grid>
+
+                        <!-- Measurement location map -->
+                        <Border BackgroundColor="White"
+                                Stroke="#B8CCE8"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 12"
+                                Padding="0"
+                                HeightRequest="190">
+                            <Grid>
+                                <WebView Source="{Binding MapSource}"
+                                         IsVisible="{Binding HasLatestLocation}" />
+
+                                <VerticalStackLayout IsVisible="{Binding HasLatestLocation, Converter={StaticResource InvertedBoolConverter}}"
+                                                     Spacing="8"
+                                                     VerticalOptions="Center"
+                                                     Padding="20">
+                                    <Label Text="No location for this measurement"
+                                           TextColor="{StaticResource MapPlaceholder}"
+                                           FontSize="14"
+                                           FontAttributes="Bold"
+                                           HorizontalTextAlignment="Center" />
+                                    <Label Text="Location is captured from this phone when readings are received from the ESP."
+                                           TextColor="{StaticResource TextMuted}"
+                                           FontSize="12"
+                                           HorizontalTextAlignment="Center" />
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Border>
                     </VerticalStackLayout>
                 </Border>
 

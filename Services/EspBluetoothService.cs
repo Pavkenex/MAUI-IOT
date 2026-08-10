@@ -1,6 +1,7 @@
 using MAUI_IOT.Models;
 using MAUI_IOT.Protocol;
 using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Devices.Sensors;
 using Plugin.BLE;
 using Plugin.BLE.Abstractions;
 using Plugin.BLE.Abstractions.Contracts;
@@ -17,6 +18,7 @@ public sealed class EspBluetoothService : IEspBluetoothService
 
     private readonly IAdapter _adapter;
     private readonly IEspReadingRepository _repository;
+    private readonly IDeviceLocationService _locationService;
     private readonly Dictionary<string, EspDeviceInfo> _scannedDevices = new();
     private readonly Dictionary<string, IDevice> _bleDevices = new();
     private readonly Dictionary<string, ICharacteristic> _characteristics = new();
@@ -30,9 +32,12 @@ public sealed class EspBluetoothService : IEspBluetoothService
 
     public event EventHandler? ConnectionLost;
 
-    public EspBluetoothService(IEspReadingRepository repository)
+    public EspBluetoothService(
+        IEspReadingRepository repository,
+        IDeviceLocationService locationService)
     {
         _repository = repository;
+        _locationService = locationService;
         _adapter = CrossBluetoothLE.Current.Adapter;
         _adapter.DeviceConnectionLost += OnDeviceConnectionLost;
         _connectionLostHandlerAttached = true;
@@ -305,10 +310,12 @@ public sealed class EspBluetoothService : IEspBluetoothService
         Report(progress, new EspSyncProgress(EspSyncStage.ReadingDeviceInfo, 0, 0, 0, 0));
 
         var range = await ReadRangeAsync(rangeCharacteristic, cancellationToken);
+        var phoneLocation = await _locationService.GetCurrentLocationAsync(cancellationToken);
 
         var transfer = await StartTransferAsync(
             identity,
             range,
+            phoneLocation,
             uptimeCharacteristic,
             controlCharacteristic,
             dataCharacteristic,
@@ -322,6 +329,7 @@ public sealed class EspBluetoothService : IEspBluetoothService
     private async Task<EspSyncResult> StartTransferAsync(
         EspDeviceIdentity identity,
         EspReadingRange range,
+        Location? phoneLocation,
         ICharacteristic uptimeCharacteristic,
         ICharacteristic controlCharacteristic,
         ICharacteristic dataCharacteristic,
@@ -344,6 +352,7 @@ public sealed class EspBluetoothService : IEspBluetoothService
             identity.BootSessionId,
             uptime,
             phoneAnchorUtc,
+            phoneLocation,
             requestedAfterId,
             hasGapFromCursor,
             progress);
@@ -393,6 +402,7 @@ public sealed class EspBluetoothService : IEspBluetoothService
                 var result = await StartTransferAsync(
                     newIdentity,
                     newRange,
+                    phoneLocation,
                     uptimeCharacteristic,
                     controlCharacteristic,
                     dataCharacteristic,
@@ -567,6 +577,8 @@ public sealed class EspBluetoothService : IEspBluetoothService
             ElapsedSeconds = values.ElapsedSeconds,
             TemperatureCelsius = values.TemperatureCelsius,
             HumidityPercent = values.HumidityPercent,
+            Latitude = transfer.PhoneLocation?.Latitude,
+            Longitude = transfer.PhoneLocation?.Longitude,
             RecordedAtUtc = EspTimestampCalculator.RecordedAtUtc(
                 transfer.PhoneAnchorUtc,
                 transfer.EspAnchorUptimeSeconds,
@@ -800,6 +812,7 @@ public sealed class EspBluetoothService : IEspBluetoothService
             uint bootSessionId,
             uint espAnchorUptimeSeconds,
             DateTimeOffset phoneAnchorUtc,
+            Location? phoneLocation,
             uint requestedAfterId,
             bool hasGap,
             IProgress<EspSyncProgress>? progress)
@@ -808,6 +821,7 @@ public sealed class EspBluetoothService : IEspBluetoothService
             BootSessionId = bootSessionId;
             EspAnchorUptimeSeconds = espAnchorUptimeSeconds;
             PhoneAnchorUtc = phoneAnchorUtc;
+            PhoneLocation = phoneLocation;
             RequestedAfterId = requestedAfterId;
             HasGap = hasGap;
             Progress = progress;
@@ -820,6 +834,8 @@ public sealed class EspBluetoothService : IEspBluetoothService
         public uint EspAnchorUptimeSeconds { get; }
 
         public DateTimeOffset PhoneAnchorUtc { get; }
+
+        public Location? PhoneLocation { get; }
 
         public uint RequestedAfterId { get; }
 

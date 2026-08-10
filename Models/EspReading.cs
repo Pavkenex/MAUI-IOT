@@ -23,6 +23,10 @@ public sealed class EspReading
 
     public double HumidityPercent { get; set; }
 
+    public double? Latitude { get; set; }
+
+    public double? Longitude { get; set; }
+
     public DateTimeOffset RecordedAtUtc { get; set; }
 
     public DateTimeOffset ReceivedAtUtc { get; set; }

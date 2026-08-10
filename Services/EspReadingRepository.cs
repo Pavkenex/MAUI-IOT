@@ -17,9 +17,31 @@ public sealed class EspReadingRepository : IEspReadingRepository
             SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.SharedCache);
     }
 
-    private Task EnsureCreatedAsync()
+    private async Task EnsureCreatedAsync()
     {
-        return _connection.CreateTablesAsync<EspReading, EspSyncCursor, EspDeviceRecord>();
+        await _connection.CreateTablesAsync<EspReading, EspSyncCursor, EspDeviceRecord>();
+        await MigrateAsync();
+    }
+
+    private async Task MigrateAsync()
+    {
+        var columns = await _connection.QueryAsync<TableColumnInfo>("SELECT name FROM pragma_table_info('esp_readings')");
+        var columnSet = new HashSet<string>(columns.Select(c => c.Name), StringComparer.OrdinalIgnoreCase);
+
+        if (!columnSet.Contains("Latitude"))
+        {
+            await _connection.ExecuteAsync("ALTER TABLE esp_readings ADD COLUMN Latitude REAL");
+        }
+
+        if (!columnSet.Contains("Longitude"))
+        {
+            await _connection.ExecuteAsync("ALTER TABLE esp_readings ADD COLUMN Longitude REAL");
+        }
+    }
+
+    private sealed class TableColumnInfo
+    {
+        public string Name { get; set; } = string.Empty;
     }
 
     public async Task<bool> ExistsAsync(string deviceId, uint bootSessionId, uint readingId)

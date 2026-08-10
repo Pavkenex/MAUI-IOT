@@ -26,6 +26,45 @@
                        TextColor="DarkRed"
                        IsVisible="{Binding HasError}" />
 
+                <!-- Local storage summary -->
+                <Border Style="{StaticResource DashboardCard}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Local Storage Summary"
+                               TextColor="{StaticResource TextPrimary}"
+                               FontSize="16"
+                               FontAttributes="Bold" />
+                        <Label Text="{Binding StorageSummary}"
+                               TextColor="{StaticResource TextMuted}"
+                               FontSize="13" />
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                            <VerticalStackLayout Spacing="2">
+                                <Label Text="READINGS"
+                                       Style="{StaticResource MetricTitleLabel}" />
+                                <Label Text="{Binding TotalReadings}"
+                                       TextColor="{StaticResource TemperatureAccent}"
+                                       FontSize="20"
+                                       FontAttributes="Bold" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                <Label Text="DEVICES"
+                                       Style="{StaticResource MetricTitleLabel}" />
+                                <Label Text="{Binding TotalDevices}"
+                                       TextColor="{StaticResource HumidityAccent}"
+                                       FontSize="20"
+                                       FontAttributes="Bold" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="2" Spacing="2">
+                                <Label Text="PENDING"
+                                       Style="{StaticResource MetricTitleLabel}" />
+                                <Label Text="{Binding PendingUploads}"
+                                       TextColor="{StaticResource GpsAccent}"
+                                       FontSize="20"
+                                       FontAttributes="Bold" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
                 <!-- No readings state -->
                 <Border IsVisible="{Binding HasReadings, Converter={StaticResource InvertedBoolConverter}}"
                         Style="{StaticResource DashboardCard}">
@@ -45,13 +84,6 @@
                 <!-- Reading list -->
                 <CollectionView ItemsSource="{Binding Readings}"
                                 IsVisible="{Binding HasReadings}">
-                    <CollectionView.Header>
-                        <VerticalStackLayout Spacing="8">
-                            <Label Text="{Binding TotalReadings, StringFormat='Total readings: {0}'}"
-                                   TextColor="{StaticResource TextMuted}"
-                                   FontSize="13" />
-                        </VerticalStackLayout>
-                    </CollectionView.Header>
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="models:EspReadingView">
                             <Border BackgroundColor="{StaticResource CardBackground}"

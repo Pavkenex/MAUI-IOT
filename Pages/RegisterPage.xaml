@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MAUI_IOT.Pages.RegisterPage"
+             BackgroundColor="{StaticResource AppBackground}"
+             Shell.TabBarIsVisible="False"
+             Shell.NavBarIsVisible="False"
+             Title="Create account">
+    <ScrollView>
+        <VerticalStackLayout Padding="20,48,20,24" Spacing="18" VerticalOptions="Center">
+            <VerticalStackLayout Spacing="6">
+                <Label Text="Create account"
+                       Style="{StaticResource PageTitleLabel}"
+                       HorizontalTextAlignment="Center" />
+                <Label Text="Your readings are stored under this account"
+                       Style="{StaticResource PageSubtitleLabel}"
+                       HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
+
+            <Border Style="{StaticResource DashboardCard}">
+                <VerticalStackLayout Spacing="14">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="USERNAME" Style="{StaticResource MetricTitleLabel}" />
+                        <Border Style="{StaticResource AuthFieldBorder}">
+                            <Entry Style="{StaticResource AuthEntry}"
+                                   Text="{Binding Username}"
+                                   Placeholder="3-32 letters, digits, . _ -"
+                                   IsSpellCheckEnabled="False"
+                                   IsTextPredictionEnabled="False"
+                                   ReturnType="Next" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="PASSWORD" Style="{StaticResource MetricTitleLabel}" />
+                        <Border Style="{StaticResource AuthFieldBorder}">
+                            <Entry Style="{StaticResource AuthEntry}"
+                                   Text="{Binding Password}"
+                                   Placeholder="at least 8 characters"
+                                   IsPassword="True"
+                                   ReturnType="Next" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="CONFIRM PASSWORD" Style="{StaticResource MetricTitleLabel}" />
+                        <Border Style="{StaticResource AuthFieldBorder}">
+                            <Entry Style="{StaticResource AuthEntry}"
+                                   Text="{Binding ConfirmPassword}"
+                                   Placeholder="repeat password"
+                                   IsPassword="True"
+                                   ReturnType="Done" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <Label Text="{Binding ErrorMessage}"
+                           IsVisible="{Binding HasError}"
+                           TextColor="{StaticResource WarningText}"
+                           FontSize="13" />
+
+                    <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                       IsVisible="{Binding IsBusy}"
+                                       HeightRequest="22" />
+
+                    <Button Text="Create account"
+                            Command="{Binding RegisterCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"
+                            MinimumHeightRequest="50" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Button Text="Back to sign in"
+                    Command="{Binding GoToLoginCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="{StaticResource GpsAccent}"
+                    FontAttributes="Bold"
+                    MinimumHeightRequest="44" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

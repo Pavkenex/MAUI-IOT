@@ -34,6 +34,8 @@ public sealed partial class EspAutoSyncService : ObservableObject
 
     public ObservableCollection<EspDeviceRow> Devices { get; } = [];
 
+    public event EventHandler? ReadingsUpdated;
+
     [ObservableProperty]
     private bool isScanning;
 
@@ -207,10 +209,13 @@ public sealed partial class EspAutoSyncService : ObservableObject
                 return;
             }
 
+            var description = await _bluetooth.ReadDeviceDescriptionAsync(device);
+            var deviceName = string.IsNullOrWhiteSpace(description) ? device.Name : description;
+
             await _repository.SaveDeviceAsync(new EspDeviceRecord
             {
                 DeviceId = identity.DeviceId,
-                Name = device.Name,
+                Name = deviceName,
                 LastSeenAtUtc = DateTimeOffset.UtcNow,
             });
 
@@ -236,7 +241,7 @@ public sealed partial class EspAutoSyncService : ObservableObject
                 });
             });
 
-            await _bluetooth.SynchronizeAsync(device, identity, progress);
+            var result = await _bluetooth.SynchronizeAsync(device, identity, progress);
 
             _cooldowns[device.Id] = DateTimeOffset.UtcNow + CooldownAfterSync;
             await OnUiAsync(() =>
@@ -245,6 +250,11 @@ public sealed partial class EspAutoSyncService : ObservableObject
                 row.LastSyncAt = DateTimeOffset.Now;
                 StatusMessage = $"Synced {device.Name}.";
             });
+
+            if (result.NewlyPersistedCount > 0)
+            {
+                ReadingsUpdated?.Invoke(this, EventArgs.Empty);
+            }
         }
         catch (Exception ex)
         {

@@ -27,6 +27,7 @@ public sealed class EspBluetoothService : IEspBluetoothService
 
     private IDevice? _connectedDevice;
     private EspDeviceInfo? _connectedDeviceInfo;
+    private string? _deviceDescription;
     private TransferState? _transfer;
     private bool _connectionLostHandlerAttached;
 
@@ -130,9 +131,18 @@ public sealed class EspBluetoothService : IEspBluetoothService
         _adapter.DeviceDiscovered += OnDiscovered;
         _adapter.DeviceAdvertised += OnAdvertised;
 
+        var scanFilter = new ScanFilterOptions
+        {
+            ServiceUuids = [EspProtocol.ServiceUuid],
+        };
+
         try
         {
-            await _adapter.StartScanningForDevicesAsync(cancellationToken: timeoutCts.Token);
+            await _adapter.StartScanningForDevicesAsync(
+                scanFilter,
+                deviceFilter: IsEspDevice,
+                allowDuplicatesKey: true,
+                cancellationToken: timeoutCts.Token);
         }
         catch (OperationCanceledException)
         {
@@ -241,6 +251,7 @@ public sealed class EspBluetoothService : IEspBluetoothService
 
         _connectedDevice = null;
         _connectedDeviceInfo = null;
+        _deviceDescription = null;
         _characteristics.Clear();
     }
 
@@ -285,6 +296,59 @@ public sealed class EspBluetoothService : IEspBluetoothService
             cancellationToken);
 
         return await ReadIdentityAsync(identityCharacteristic, cancellationToken);
+    }
+
+    public async Task<string> ReadDeviceDescriptionAsync(
+        EspDeviceInfo device,
+        CancellationToken cancellationToken = default)
+    {
+        if (_deviceDescription is not null)
+        {
+            return _deviceDescription;
+        }
+
+        if (!IsConnected || _connectedDevice is null)
+        {
+            throw new EspSyncException("Device is not connected.");
+        }
+
+        if (_connectedDeviceInfo?.Id != device.Id)
+        {
+            throw new EspSyncException($"Connected to a different device ({_connectedDeviceInfo?.Name ?? "unknown"}).");
+        }
+
+        try
+        {
+            var descriptionCharacteristic = await GetCharacteristicAsync(
+                _connectedDevice.Id.ToString(),
+                EspProtocol.DeviceInfoUuid,
+                cancellationToken);
+
+            var (data, resultCode) = await descriptionCharacteristic.ReadAsync(cancellationToken);
+            if (resultCode != 0 || data is null || data.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            _deviceDescription = DecodeDeviceDescription(data);
+            return _deviceDescription;
+        }
+        catch (Exception)
+        {
+            return string.Empty;
+        }
+    }
+
+    private static string DecodeDeviceDescription(byte[] data)
+    {
+        var text = System.Text.Encoding.UTF8.GetString(data);
+        var terminator = text.IndexOf('\0');
+        if (terminator >= 0)
+        {
+            text = text[..terminator];
+        }
+
+        return text.Trim();
     }
 
     private async Task<EspSyncResult> RunSynchronizationAsync(
@@ -443,6 +507,22 @@ public sealed class EspBluetoothService : IEspBluetoothService
                 });
             }
 
+            if (!string.IsNullOrWhiteSpace(transfer.DeviceDescription))
+            {
+                try
+                {
+                    await _repository.SaveDeviceAsync(new EspDeviceRecord
+                    {
+                        DeviceId = transfer.DeviceId,
+                        Name = transfer.DeviceDescription,
+                        LastSeenAtUtc = DateTimeOffset.UtcNow,
+                    });
+                }
+                catch (Exception)
+                {
+                }
+            }
+
             Report(progress, new EspSyncProgress(EspSyncStage.Finalizing, transfer.ReceivedCount, transfer.PersistedCount, transfer.DuplicateCount, transfer.LastPersistedReadingId));
 
             if (transfer.LastPersistedReadingId > 0)
@@ -522,8 +602,17 @@ public sealed class EspBluetoothService : IEspBluetoothService
 
         try
         {
-            switch ((EspProtocol.DataPacketType)data[0])
+            var packetType = (EspProtocol.DataPacketType)data[0];
+            if (packetType != EspProtocol.DataPacketType.DeviceInfo)
             {
+                transfer.ResetDeviceDescription();
+            }
+
+            switch (packetType)
+            {
+                case EspProtocol.DataPacketType.DeviceInfo:
+                    HandleDeviceInfoPacket(transfer, data);
+                    break;
                 case EspProtocol.DataPacketType.ReadingMeta:
                     HandleMetaPacket(transfer, data);
                     break;
@@ -541,6 +630,12 @@ public sealed class EspBluetoothService : IEspBluetoothService
         catch (EspProtocolException)
         {
         }
+    }
+
+    private void HandleDeviceInfoPacket(TransferState transfer, byte[] data)
+    {
+        var description = EspPacketParser.ParseDeviceDescription(data);
+        transfer.AppendDeviceDescription(description.TextChunk.Span, description.Terminated);
     }
 
     private void HandleMetaPacket(TransferState transfer, byte[] data)
@@ -752,12 +847,6 @@ public sealed class EspBluetoothService : IEspBluetoothService
 
     private bool IsEspDevice(IDevice device)
     {
-        if (!string.IsNullOrWhiteSpace(device.Name) &&
-            device.Name.StartsWith(EspProtocol.DeviceNamePrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
         return device.AdvertisementRecords.Any(record =>
             (record.Type == AdvertisementRecordType.UuidsIncomplete128Bit ||
              record.Type == AdvertisementRecordType.UuidsComplete128Bit) &&
@@ -778,8 +867,13 @@ public sealed class EspBluetoothService : IEspBluetoothService
 
     private static byte[] CreateServiceUuidBytes()
     {
+        var hex = EspProtocol.ServiceUuid.ToString("N");
         var bytes = new byte[16];
-        EspProtocol.ServiceUuid.TryWriteBytes(bytes);
+        for (var i = 0; i < bytes.Length; i++)
+        {
+            bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
+        }
+
         return bytes;
     }
 
@@ -850,6 +944,26 @@ public sealed class EspBluetoothService : IEspBluetoothService
         public int DuplicateCount { get; set; }
 
         public uint LastPersistedReadingId { get; set; }
+
+        public string? DeviceDescription { get; private set; }
+
+        private readonly List<byte> _deviceDescriptionBytes = new();
+
+        public void AppendDeviceDescription(ReadOnlySpan<byte> chunk, bool terminated)
+        {
+            _deviceDescriptionBytes.AddRange(chunk.ToArray());
+            if (terminated)
+            {
+                var name = System.Text.Encoding.UTF8.GetString(_deviceDescriptionBytes.ToArray());
+                DeviceDescription = name.Trim();
+                _deviceDescriptionBytes.Clear();
+            }
+        }
+
+        public void ResetDeviceDescription()
+        {
+            _deviceDescriptionBytes.Clear();
+        }
 
         public Task<TransferOutcome> Completion => _completion.Task;
 

@@ -163,4 +163,33 @@ public static class EspPacketParser
             ReadUInt32(data, 8),
             ReadUInt32(data, 12));
     }
+
+    public static EspDeviceDescription ParseDeviceDescription(ReadOnlySpan<byte> data)
+    {
+        if (data.Length != EspProtocol.DeviceInfoPacketLength)
+        {
+            throw new EspProtocolException(
+                $"DEVICE_INFO packet has invalid length {data.Length}; expected {EspProtocol.DeviceInfoPacketLength}.");
+        }
+        if (data[0] != (byte)EspProtocol.DataPacketType.DeviceInfo)
+        {
+            throw new EspProtocolException($"Not a DEVICE_INFO packet (type 0x{data[0]:X2}).");
+        }
+        if (data[1] != EspProtocol.Version)
+        {
+            throw new EspProtocolException($"Unsupported protocol version {data[1]}.");
+        }
+
+        var text = data.Slice(EspProtocol.DeviceInfoTextOffset, EspProtocol.DeviceInfoTextCapacity);
+        var textLength = 0;
+        while (textLength < text.Length && text[textLength] != 0)
+        {
+            textLength++;
+        }
+
+        return new EspDeviceDescription(
+            data[1],
+            text[..textLength].ToArray(),
+            textLength < text.Length);
+    }
 }

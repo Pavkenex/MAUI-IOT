@@ -29,9 +29,10 @@ public sealed class DeviceLocationService : IDeviceLocationService
         {
             _cachedLocation = location;
             _cachedAtUtc = DateTimeOffset.UtcNow;
+            return location;
         }
 
-        return location;
+        return _cachedLocation;
     }
 
     private static async Task<bool> TryEnsurePermissionAsync()

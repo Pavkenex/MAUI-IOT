@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="MAUI&amp;IOT.csproj" />
+  <Project Path="MauiIot.Api/MauiIot.Api.csproj" />
 </Solution>

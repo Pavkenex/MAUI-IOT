@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Maui;assembly=LiveChartsCore.SkiaSharpView.Maui"
              x:Class="MAUI_IOT.Pages.DashboardPage"
              BackgroundColor="{StaticResource AppBackground}"
              Title="Dashboard">
@@ -9,18 +10,46 @@
                  RefreshColor="{StaticResource GpsAccent}">
         <ScrollView>
             <VerticalStackLayout Padding="16,16,16,28" Spacing="16">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                    <VerticalStackLayout Spacing="2">
-                        <Label Text="ESP Readings Dashboard" Style="{StaticResource PageTitleLabel}" />
-                        <Label Text="{Binding LastUpdated}" Style="{StaticResource PageSubtitleLabel}" />
-                    </VerticalStackLayout>
+                <Grid RowDefinitions="Auto,Auto" RowSpacing="10">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="ESP Readings Dashboard" Style="{StaticResource PageTitleLabel}" />
+                            <Label Text="{Binding LastUpdated}" Style="{StaticResource PageSubtitleLabel}" />
+                        </VerticalStackLayout>
 
-                    <Button Grid.Column="1"
-                            Text="Refresh"
-                            Command="{Binding LoadDashboardCommand}"
-                            MinimumHeightRequest="44"
-                            Padding="14,8"
-                            VerticalOptions="Center" />
+                        <Button Grid.Column="1"
+                                Text="Refresh"
+                                Command="{Binding LoadDashboardCommand}"
+                                MinimumHeightRequest="44"
+                                Padding="14,8"
+                                VerticalOptions="Center" />
+                    </Grid>
+
+                    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <VerticalStackLayout Spacing="1" VerticalOptions="Center">
+                            <Label Text="ACCOUNT" Style="{StaticResource MetricTitleLabel}" />
+                            <Label Text="{Binding AccountName}"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   FontAttributes="Bold"
+                                   LineBreakMode="TailTruncation" />
+                        </VerticalStackLayout>
+
+                        <Button Grid.Column="1"
+                                Text="Sign out"
+                                Command="{Binding LogoutCommand}"
+                                IsVisible="{Binding IsSignedIn}"
+                                MinimumHeightRequest="40"
+                                Padding="14,6"
+                                VerticalOptions="Center" />
+
+                        <Button Grid.Column="1"
+                                Text="Sign in"
+                                Command="{Binding SignInCommand}"
+                                IsVisible="{Binding IsSignedIn, Converter={StaticResource InvertedBoolConverter}}"
+                                MinimumHeightRequest="40"
+                                Padding="14,6"
+                                VerticalOptions="Center" />
+                    </Grid>
                 </Grid>
 
                 <ActivityIndicator IsRunning="{Binding IsBusy}"
@@ -41,48 +70,51 @@
                         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                             <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
                                 <Label Text="⌖"
-                                       FontSize="28"
+                                       FontSize="26"
                                        TextColor="{StaticResource GpsAccent}"
                                        VerticalOptions="Center" />
 
-                                <Label Text="Latest ESP Measurement"
+                                <Label Text="Last Reading"
                                        FontSize="22"
                                        FontAttributes="Bold"
                                        TextColor="{StaticResource TextPrimary}"
                                        LineBreakMode="TailTruncation"
-                                       MaxLines="2"
                                        VerticalOptions="Center" />
                             </HorizontalStackLayout>
 
-                            <VerticalStackLayout Grid.Column="1"
-                                                 Spacing="2"
-                                                 HorizontalOptions="End"
-                                                 MaximumWidthRequest="130">
-                                <Label Text="DEVICE"
-                                       Style="{StaticResource MetricTitleLabel}"
-                                       HorizontalTextAlignment="End" />
+                            <Border Grid.Column="1"
+                                    Style="{StaticResource DashboardBadge}"
+                                    BackgroundColor="White"
+                                    MaximumWidthRequest="150"
+                                    VerticalOptions="Center">
                                 <Label Text="{Binding LatestDeviceId}"
                                        TextColor="{StaticResource GpsAccent}"
-                                       FontSize="13"
+                                       FontSize="12"
                                        FontAttributes="Bold"
-                                       HorizontalTextAlignment="End"
-                                       LineBreakMode="TailTruncation" />
-                            </VerticalStackLayout>
+                                       LineBreakMode="TailTruncation"
+                                       MaxLines="1" />
+                            </Border>
                         </Grid>
 
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <Grid ColumnDefinitions="*,1,*" ColumnSpacing="16" RowSpacing="6">
                             <VerticalStackLayout Spacing="2">
-                                <Label Text="TEMP" Style="{StaticResource MetricTitleLabel}" />
+                                <Label Text="TEMPERATURE" Style="{StaticResource MetricTitleLabel}" />
                                 <Label Text="{Binding Temperature}"
                                        TextColor="{StaticResource TemperatureAccent}"
-                                       FontSize="22"
+                                       FontSize="24"
                                        FontAttributes="Bold" />
                             </VerticalStackLayout>
-                            <VerticalStackLayout Grid.Column="1" Spacing="2">
+
+                            <BoxView Grid.Column="1"
+                                     WidthRequest="1"
+                                     Color="#B8CCE8"
+                                     VerticalOptions="Fill" />
+
+                            <VerticalStackLayout Grid.Column="2" Spacing="2">
                                 <Label Text="HUMIDITY" Style="{StaticResource MetricTitleLabel}" />
                                 <Label Text="{Binding Humidity}"
                                        TextColor="{StaticResource HumidityPurple}"
-                                       FontSize="22"
+                                       FontSize="24"
                                        FontAttributes="Bold" />
                             </VerticalStackLayout>
                         </Grid>
@@ -95,8 +127,10 @@
                                 Padding="0"
                                 HeightRequest="190">
                             <Grid>
-                                <WebView Source="{Binding MapSource}"
-                                         IsVisible="{Binding HasLatestLocation}" />
+                                <WebView x:Name="MapWebView"
+                                         Source="{Binding MapSource}"
+                                         IsVisible="{Binding HasLatestLocation}"
+                                         Navigating="OnMapNavigating" />
 
                                 <VerticalStackLayout IsVisible="{Binding HasLatestLocation, Converter={StaticResource InvertedBoolConverter}}"
                                                      Spacing="8"
@@ -129,98 +163,133 @@
                                    Style="{StaticResource PageSubtitleLabel}" />
                         </VerticalStackLayout>
 
-                        <HorizontalStackLayout Spacing="8">
-                            <Border Style="{StaticResource DashboardBadge}"
-                                    BackgroundColor="{StaticResource SoftBlue}">
-                                <Label Text="{Binding SelectedTrendRange}"
-                                       TextColor="{StaticResource TemperatureAccent}"
-                                       FontSize="12"
-                                       FontAttributes="Bold" />
-                            </Border>
+                        <Grid ColumnDefinitions="*,*"
+                              ColumnSpacing="8"
+                              IsVisible="{Binding Trend.HasData}">
+                            <Button Text="Temperature"
+                                    Command="{Binding Trend.SelectTemperatureCommand}"
+                                    BackgroundColor="{StaticResource SoftNeutral}"
+                                    TextColor="{StaticResource TextPrimary}"
+                                    FontSize="13"
+                                    FontAttributes="Bold"
+                                    MinimumHeightRequest="40"
+                                    Padding="12,6"
+                                    CornerRadius="10">
+                                <Button.Triggers>
+                                    <DataTrigger TargetType="Button"
+                                                 Binding="{Binding Trend.IsTemperatureSelected}"
+                                                 Value="True">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource TemperatureAccent}" />
+                                        <Setter Property="TextColor" Value="White" />
+                                    </DataTrigger>
+                                </Button.Triggers>
+                            </Button>
 
-                            <Border Style="{StaticResource DashboardBadge}"
-                                    BackgroundColor="{StaticResource SoftNeutral}">
-                                <Label Text="7 points"
-                                       TextColor="{StaticResource TextPrimary}"
-                                       FontSize="12"
-                                       FontAttributes="Bold" />
-                            </Border>
-                        </HorizontalStackLayout>
+                            <Button Grid.Column="1"
+                                    Text="Humidity"
+                                    Command="{Binding Trend.SelectHumidityCommand}"
+                                    BackgroundColor="{StaticResource SoftNeutral}"
+                                    TextColor="{StaticResource TextPrimary}"
+                                    FontSize="13"
+                                    FontAttributes="Bold"
+                                    MinimumHeightRequest="40"
+                                    Padding="12,6"
+                                    CornerRadius="10">
+                                <Button.Triggers>
+                                    <DataTrigger TargetType="Button"
+                                                 Binding="{Binding Trend.IsHumiditySelected}"
+                                                 Value="True">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource HumidityPurple}" />
+                                        <Setter Property="TextColor" Value="White" />
+                                    </DataTrigger>
+                                </Button.Triggers>
+                            </Button>
+                        </Grid>
 
-                        <Border Stroke="{StaticResource TrendGridLine}"
+                        <lvc:CartesianChart IsVisible="{Binding Trend.HasData}"
+                                            HeightRequest="236"
+                                            Series="{Binding Trend.Series}"
+                                            XAxes="{Binding Trend.XAxes}"
+                                            YAxes="{Binding Trend.YAxes}"
+                                            LegendPosition="Bottom"
+                                            TooltipPosition="Top"
+                                            LegendTextSize="12"
+                                            TooltipTextSize="12"
+                                            LegendTextPaint="{Binding Trend.LegendTextPaint}"
+                                            TooltipTextPaint="{Binding Trend.TooltipTextPaint}"
+                                            TooltipBackgroundPaint="{Binding Trend.TooltipBackgroundPaint}"
+                                            DataPointerDown="OnTrendDataPointerDown" />
+
+                        <Label Text="No readings yet"
+                               IsVisible="{Binding Trend.HasData, Converter={StaticResource InvertedBoolConverter}}"
+                               TextColor="{StaticResource TextMuted}"
+                               FontSize="14"
+                               HorizontalTextAlignment="Center"
+                               Padding="0,24" />
+
+                        <Border IsVisible="{Binding Trend.HasSelection}"
+                                BackgroundColor="{StaticResource SoftNeutral}"
+                                Stroke="{StaticResource CardStroke}"
                                 StrokeThickness="1"
-                                StrokeShape="RoundRectangle 10"
-                                HeightRequest="236"
-                                Padding="12">
-                            <Grid RowDefinitions="*,Auto" RowSpacing="12">
-                                <Grid RowDefinitions="*,*,*,*" ColumnDefinitions="*,*,*,*,*,*,*">
-                                    <BoxView Grid.Row="1" Grid.ColumnSpan="7" HeightRequest="1" BackgroundColor="{StaticResource TrendGridLine}" />
-                                    <BoxView Grid.Row="2" Grid.ColumnSpan="7" HeightRequest="1" BackgroundColor="{StaticResource TrendGridLine}" />
-                                    <BoxView Grid.Column="1" Grid.RowSpan="4" WidthRequest="1" BackgroundColor="{StaticResource TrendGridLine}" />
-                                    <BoxView Grid.Column="2" Grid.RowSpan="4" WidthRequest="1" BackgroundColor="{StaticResource TrendGridLine}" />
-                                    <BoxView Grid.Column="3" Grid.RowSpan="4" WidthRequest="1" BackgroundColor="{StaticResource TrendGridLine}" />
-                                    <BoxView Grid.Column="4" Grid.RowSpan="4" WidthRequest="1" BackgroundColor="{StaticResource TrendGridLine}" />
-                                    <BoxView Grid.Column="5" Grid.RowSpan="4" WidthRequest="1" BackgroundColor="{StaticResource TrendGridLine}" />
+                                StrokeShape="RoundRectangle 12"
+                                Padding="14">
+                            <Grid ColumnDefinitions="*,Auto"
+                                  RowDefinitions="Auto,Auto,Auto,Auto"
+                                  ColumnSpacing="10"
+                                  RowSpacing="4">
+                                <Label Text="{Binding Trend.SelectedDeviceName}"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       LineBreakMode="TailTruncation" />
 
-                                    <HorizontalStackLayout Grid.RowSpan="4"
-                                                           Grid.ColumnSpan="7"
-                                                           BindableLayout.ItemsSource="{Binding TrendBars}"
-                                                           Spacing="6"
-                                                           HorizontalOptions="Center"
-                                                           VerticalOptions="End">
-                                        <BindableLayout.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid RowDefinitions="*,Auto" RowSpacing="6" WidthRequest="30" HeightRequest="170">
-                                                    <HorizontalStackLayout Spacing="3" HorizontalOptions="Center" VerticalOptions="End">
-                                                        <BoxView WidthRequest="12"
-                                                                 HeightRequest="{Binding TemperatureHeight}"
-                                                                 CornerRadius="4,4,0,0"
-                                                                 BackgroundColor="{StaticResource TemperatureAccent}"
-                                                                 VerticalOptions="End" />
+                                <Button Grid.Column="1"
+                                        Text="×"
+                                        Command="{Binding Trend.DismissSelectionCommand}"
+                                        BackgroundColor="Transparent"
+                                        TextColor="{StaticResource TextMuted}"
+                                        FontSize="16"
+                                        Padding="8,0"
+                                        MinimumHeightRequest="32"
+                                        MinimumWidthRequest="32" />
 
-                                                        <BoxView WidthRequest="12"
-                                                                 HeightRequest="{Binding HumidityHeight}"
-                                                                 CornerRadius="4,4,0,0"
-                                                                 BackgroundColor="{StaticResource HumidityPurple}"
-                                                                 VerticalOptions="End" />
-                                                    </HorizontalStackLayout>
+                                <Label Grid.Row="1"
+                                       Grid.ColumnSpan="2"
+                                       Text="{Binding Trend.SelectedValueText}"
+                                       TextColor="{StaticResource TemperatureAccent}"
+                                       FontSize="22"
+                                       FontAttributes="Bold">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label"
+                                                     Binding="{Binding Trend.IsHumiditySelected}"
+                                                     Value="True">
+                                            <Setter Property="TextColor" Value="{StaticResource HumidityPurple}" />
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
 
-                                                    <Label Grid.Row="1"
-                                                           Text="{Binding Label}"
-                                                           FontSize="9"
-                                                           TextColor="{StaticResource TextMuted}"
-                                                           HorizontalTextAlignment="Center" />
-                                                </Grid>
-                                            </DataTemplate>
-                                        </BindableLayout.ItemTemplate>
-                                    </HorizontalStackLayout>
+                                <Label Grid.Row="2"
+                                       Grid.ColumnSpan="2"
+                                       Text="{Binding Trend.SelectedTimeText}"
+                                       TextColor="{StaticResource TextMuted}"
+                                       FontSize="12" />
+
+                                <Grid Grid.Row="3"
+                                      Grid.ColumnSpan="2"
+                                      ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="10">
+                                    <Label Text="{Binding Trend.SelectedLocationText}"
+                                           TextColor="{StaticResource TextMuted}"
+                                           FontSize="12"
+                                           VerticalOptions="Center" />
+
+                                    <Button Grid.Column="1"
+                                            Text="View device"
+                                            Command="{Binding Trend.ViewDeviceCommand}"
+                                            MinimumHeightRequest="36"
+                                            Padding="12,4"
+                                            FontSize="12" />
                                 </Grid>
-
-                                <Border Grid.Row="1"
-                                        BackgroundColor="White"
-                                        Stroke="#EEF0F5"
-                                        StrokeThickness="1"
-                                        StrokeShape="RoundRectangle 10"
-                                        Padding="10"
-                                        HorizontalOptions="Center">
-                                    <HorizontalStackLayout Spacing="16">
-                                        <HorizontalStackLayout Spacing="7">
-                                            <BoxView WidthRequest="12" HeightRequest="12" CornerRadius="2" BackgroundColor="{StaticResource TemperatureAccent}" />
-                                            <VerticalStackLayout Spacing="0">
-                                                <Label Text="TEMPERATURE" Style="{StaticResource MetricTitleLabel}" FontSize="10" />
-                                                <Label Text="{Binding TrendTemperature}" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
-                                            </VerticalStackLayout>
-                                        </HorizontalStackLayout>
-
-                                        <HorizontalStackLayout Spacing="7">
-                                            <BoxView WidthRequest="12" HeightRequest="12" CornerRadius="2" BackgroundColor="{StaticResource HumidityPurple}" />
-                                            <VerticalStackLayout Spacing="0">
-                                                <Label Text="HUMIDITY" Style="{StaticResource MetricTitleLabel}" FontSize="10" />
-                                                <Label Text="{Binding TrendHumidity}" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
-                                            </VerticalStackLayout>
-                                        </HorizontalStackLayout>
-                                    </HorizontalStackLayout>
-                                </Border>
                             </Grid>
                         </Border>
                     </VerticalStackLayout>

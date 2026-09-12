@@ -32,6 +32,8 @@ public interface IEspBluetoothService
 
     Task<EspDeviceIdentity> ReadDeviceIdentityAsync(EspDeviceInfo device, CancellationToken cancellationToken = default);
 
+    Task<string> ReadDeviceDescriptionAsync(EspDeviceInfo device, CancellationToken cancellationToken = default);
+
     Task<EspSyncResult> SynchronizeAsync(
         EspDeviceInfo device,
         EspDeviceIdentity identity,

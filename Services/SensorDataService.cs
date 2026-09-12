@@ -26,14 +26,14 @@ public sealed class SensorDataService : ISensorDataService
             var isOnline = latest is not null;
 
             sensors.Add(new SensorSummary(
-                HashSensorId(TemperatureKey(device.DeviceId)),
+                SensorIdHasher.ForDevice(device.DeviceId, isTemperature: true),
                 device.DeviceId,
                 name,
                 "Temperature",
                 isOnline,
                 latest is null ? "--" : $"{latest.TemperatureCelsius:F1}°C"));
             sensors.Add(new SensorSummary(
-                HashSensorId(HumidityKey(device.DeviceId)),
+                SensorIdHasher.ForDevice(device.DeviceId, isTemperature: false),
                 device.DeviceId,
                 name,
                 "Humidity",
@@ -72,7 +72,9 @@ public sealed class SensorDataService : ISensorDataService
                 isTemperature
                     ? $"{reading.TemperatureCelsius:F1}°C"
                     : $"{reading.HumidityPercent:F1}%",
-                reading.RecordedAtUtc.ToLocalTime().DateTime));
+                reading.RecordedAtUtc.ToLocalTime().DateTime,
+                reading.Latitude,
+                reading.Longitude));
         }
 
         return result;
@@ -83,12 +85,12 @@ public sealed class SensorDataService : ISensorDataService
         var devices = await _repository.GetDevicesAsync();
         foreach (var device in devices)
         {
-            if (HashSensorId(TemperatureKey(device.DeviceId)) == sensorId)
+            if (SensorIdHasher.ForDevice(device.DeviceId, isTemperature: true) == sensorId)
             {
                 return (device.DeviceId, true);
             }
 
-            if (HashSensorId(HumidityKey(device.DeviceId)) == sensorId)
+            if (SensorIdHasher.ForDevice(device.DeviceId, isTemperature: false) == sensorId)
             {
                 return (device.DeviceId, false);
             }
@@ -97,33 +99,8 @@ public sealed class SensorDataService : ISensorDataService
         return null;
     }
 
-    private static string TemperatureKey(string deviceId)
-    {
-        return $"{deviceId}|temp";
-    }
-
-    private static string HumidityKey(string deviceId)
-    {
-        return $"{deviceId}|hum";
-    }
-
     private static string ShortDeviceId(string deviceId)
     {
         return deviceId.Length >= 8 ? deviceId[^8..].ToUpperInvariant() : deviceId;
-    }
-
-    private static int HashSensorId(string key)
-    {
-        unchecked
-        {
-            var hash = 2166136261u;
-            foreach (var character in key)
-            {
-                hash ^= character;
-                hash *= 16777619;
-            }
-
-            return (int)hash;
-        }
     }
 }

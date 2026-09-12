@@ -101,6 +101,22 @@ public sealed class EspReadingRepository : IEspReadingRepository
             .FirstOrDefaultAsync();
     }
 
+    public async Task<IReadOnlyList<EspReading>> GetLastLocatedReadingsPerDeviceAsync(int maxDevices)
+    {
+        await EnsureCreatedAsync();
+        var readings = await _connection.Table<EspReading>()
+            .OrderByDescending(r => r.RecordedAtUtc)
+            .ToListAsync();
+
+        return readings
+            .Where(r => r.Latitude is not null && r.Longitude is not null)
+            .GroupBy(r => r.DeviceId)
+            .Select(group => group.First())
+            .OrderByDescending(r => r.RecordedAtUtc)
+            .Take(maxDevices)
+            .ToList();
+    }
+
     public async Task<int> GetReadingCountAsync()
     {
         await EnsureCreatedAsync();

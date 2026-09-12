@@ -122,7 +122,10 @@
                 <DataTemplate x:DataType="models:Reading">
                     <Border Style="{StaticResource SensorCard}"
                             Margin="16,0,16,12">
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+                        <Grid ColumnDefinitions="*,Auto"
+                              RowDefinitions="Auto,Auto"
+                              RowSpacing="4"
+                              ColumnSpacing="14">
                             <Label Text="{Binding Value}"
                                    TextColor="{StaticResource TextPrimary}"
                                    FontSize="28"
@@ -132,6 +135,12 @@
                                    TextColor="{StaticResource TextMuted}"
                                    FontSize="14"
                                    VerticalOptions="Center" />
+                            <Label Grid.Row="1"
+                                   Grid.ColumnSpan="2"
+                                   Text="{Binding LocationText, StringFormat='Location: {0}'}"
+                                   IsVisible="{Binding HasLocation}"
+                                   TextColor="{StaticResource GpsAccent}"
+                                   FontSize="12" />
                         </Grid>
                     </Border>
                 </DataTemplate>

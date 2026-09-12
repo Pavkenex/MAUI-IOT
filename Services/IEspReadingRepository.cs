@@ -12,6 +12,8 @@ public interface IEspReadingRepository
 
     Task<EspReading?> GetLatestReadingAsync(string deviceId);
 
+    Task<IReadOnlyList<EspReading>> GetLastLocatedReadingsPerDeviceAsync(int maxDevices);
+
     Task<int> GetReadingCountAsync();
 
     Task<int> GetPendingUploadCountAsync();

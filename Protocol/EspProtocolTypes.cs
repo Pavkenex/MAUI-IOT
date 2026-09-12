@@ -53,3 +53,8 @@ public sealed record EspErrorInfo(
     uint BootSessionId,
     uint OldestReadingId,
     uint LatestReadingId);
+
+public sealed record EspDeviceDescription(
+    byte Version,
+    ReadOnlyMemory<byte> TextChunk,
+    bool Terminated);

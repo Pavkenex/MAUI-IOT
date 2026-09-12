@@ -18,21 +18,25 @@
     <TabBar>
         <ShellContent
             Title="Dashboard"
+            Icon="tab_dashboard.png"
             ContentTemplate="{DataTemplate pages:DashboardPage}"
             Route="dashboard" />
 
         <ShellContent
             Title="Scan"
+            Icon="tab_scan.png"
             ContentTemplate="{DataTemplate pages:ScanPage}"
             Route="scan" />
 
         <ShellContent
             Title="Sensors"
+            Icon="tab_sensors.png"
             ContentTemplate="{DataTemplate pages:SensorsPage}"
             Route="sensors" />
 
         <ShellContent
             Title="History"
+            Icon="tab_history.png"
             ContentTemplate="{DataTemplate pages:HistoryPage}"
             Route="history" />
     </TabBar>

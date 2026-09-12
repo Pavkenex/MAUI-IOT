@@ -10,6 +10,7 @@ public static class EspProtocol
     public static readonly Guid RangeUuid = new("7b1e0004-6a2b-4f19-8f61-4d54484d3230");
     public static readonly Guid ControlUuid = new("7b1e0005-6a2b-4f19-8f61-4d54484d3230");
     public static readonly Guid DataUuid = new("7b1e0006-6a2b-4f19-8f61-4d54484d3230");
+    public static readonly Guid DeviceInfoUuid = new("7b1e0007-6a2b-4f19-8f61-4d54484d3230");
 
     public const int IdentityLength = 15;
     public const int UptimeLength = 4;
@@ -19,8 +20,9 @@ public static class EspProtocol
     public const int ValuesPacketLength = 18;
     public const int EndPacketLength = 18;
     public const int ErrorPacketLength = 16;
-
-    public const string DeviceNamePrefix = "DHT22-";
+    public const int DeviceInfoPacketLength = 20;
+    public const int DeviceInfoTextOffset = 2;
+    public const int DeviceInfoTextCapacity = 18;
 
     public enum ControlCommand : byte
     {
@@ -31,6 +33,7 @@ public static class EspProtocol
 
     public enum DataPacketType : byte
     {
+        DeviceInfo = 0x00,
         ReadingMeta = 0x01,
         ReadingValues = 0x02,
         TransferEnd = 0x03,

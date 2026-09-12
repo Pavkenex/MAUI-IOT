@@ -7,148 +7,195 @@
              x:Class="MAUI_IOT.Pages.SensorDetailPage"
              BackgroundColor="{StaticResource AppBackground}"
              Title="Sensor details">
-    <RefreshView IsRefreshing="{Binding IsRefreshing}"
-                 Command="{Binding LoadSensorCommand}"
-                 RefreshColor="{StaticResource GpsAccent}">
-        <CollectionView ItemsSource="{Binding Readings}"
-                        SelectionMode="None">
-            <CollectionView.Header>
-                <VerticalStackLayout Padding="16,16,16,0" Spacing="16">
+    <Grid RowDefinitions="Auto,*">
 
-                    <!-- Header row -->
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                        <VerticalStackLayout Spacing="2">
-                            <Label Text="{Binding Sensor.Name}"
-                                   Style="{StaticResource PageTitleLabel}" />
-                            <Label Text="Live readings"
-                                   Style="{StaticResource PageSubtitleLabel}" />
-                        </VerticalStackLayout>
+        <!-- Pinned measurement location map -->
+        <Border Grid.Row="0"
+                BackgroundColor="White"
+                Stroke="#B8CCE8"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 12"
+                Padding="0"
+                Margin="16,16,16,8"
+                HeightRequest="200">
+            <Grid>
+                <WebView Source="{Binding MapSource}"
+                         IsVisible="{Binding HasMapLocation}" />
 
-                        <Button Grid.Column="1"
-                                Text="Refresh"
-                                Command="{Binding LoadSensorCommand}"
-                                MinimumHeightRequest="44"
-                                Padding="14,8"
-                                VerticalOptions="Center" />
-                    </Grid>
-
-                    <!-- Activity indicator -->
-                    <ActivityIndicator IsRunning="{Binding IsBusy}"
-                                       IsVisible="{Binding IsBusy}"
-                                       HeightRequest="22" />
-
-                    <!-- Error label -->
-                    <Label Text="{Binding ErrorMessage}"
-                           TextColor="DarkRed"
-                           IsVisible="{Binding HasError}" />
-
-                    <!-- Sensor info card -->
-                    <Border Style="{StaticResource DashboardCard}">
-                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto"
-                              RowSpacing="10" ColumnSpacing="14">
-                            <!-- Sensor name -->
-                            <Label Grid.Row="0"
-                                   Text="{Binding Sensor.Name}"
-                                   TextColor="{StaticResource TextPrimary}"
-                                   FontSize="18"
-                                   FontAttributes="Bold"
-                                   LineBreakMode="TailTruncation" />
-
-                            <!-- Connected badge -->
-                            <Border Grid.Row="0"
-                                    Grid.Column="1"
-                                    Style="{StaticResource DashboardBadge}"
-                                    BackgroundColor="{StaticResource PositiveBadgeBackground}"
-                                    HorizontalOptions="End"
-                                    VerticalOptions="Center">
-                                <Label Text="Connected"
-                                       TextColor="{StaticResource PositiveBadgeText}"
-                                       FontSize="11"
-                                       FontAttributes="Bold" />
-                            </Border>
-
-                            <!-- Type badge -->
-                            <Border Grid.Row="1"
-                                    Style="{StaticResource DashboardBadge}"
-                                    BackgroundColor="{StaticResource SoftBlue}"
-                                    HorizontalOptions="Start">
-                                <Label Text="{Binding Sensor.Type}"
-                                       TextColor="{StaticResource TemperatureAccent}"
-                                       FontSize="11"
-                                       FontAttributes="Bold" />
-                            </Border>
-
-                            <!-- Latest reading -->
-                            <Label Grid.Row="2"
-                                   Text="{Binding Sensor.LatestReading}"
-                                   Style="{StaticResource MetricValueLabel}" />
-                        </Grid>
-                    </Border>
-
-                    <!-- Recent readings section header -->
-                    <Label Text="Recent readings"
-                           Style="{StaticResource PageTitleLabel}"
-                           Margin="0,0,0,4" />
+                <VerticalStackLayout IsVisible="{Binding HasMapLocation, Converter={StaticResource InvertedBoolConverter}}"
+                                     Spacing="8"
+                                     VerticalOptions="Center"
+                                     Padding="20">
+                    <Label Text="No location for this reading"
+                           TextColor="{StaticResource MapPlaceholder}"
+                           FontSize="14"
+                           FontAttributes="Bold"
+                           HorizontalTextAlignment="Center" />
+                    <Label Text="Location is captured from this phone when readings are received from the ESP."
+                           TextColor="{StaticResource TextMuted}"
+                           FontSize="12"
+                           HorizontalTextAlignment="Center" />
                 </VerticalStackLayout>
-            </CollectionView.Header>
+            </Grid>
+        </Border>
 
-            <CollectionView.EmptyView>
-                <Border IsVisible="{Binding IsEmpty}"
-                        BackgroundColor="{StaticResource CardBackground}"
-                        Stroke="{StaticResource CardStroke}"
-                        StrokeThickness="1"
-                        StrokeShape="RoundRectangle 12"
-                        Padding="32"
-                        Margin="16,16,16,0"
-                        HorizontalOptions="Center">
-                    <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
-                        <Label Text="--"
-                               FontSize="36"
-                               TextColor="{StaticResource TextMuted}"
-                               HorizontalTextAlignment="Center" />
-                        <Label Text="No readings available"
-                               FontSize="16"
-                               TextColor="{StaticResource TextMuted}"
-                               HorizontalTextAlignment="Center" />
-                        <Label Text="Pull down or tap Refresh to try again"
-                               FontSize="13"
-                               TextColor="{StaticResource Gray300}"
-                               HorizontalTextAlignment="Center" />
-                    </VerticalStackLayout>
-                </Border>
-            </CollectionView.EmptyView>
+        <RefreshView Grid.Row="1"
+                     IsRefreshing="{Binding IsRefreshing}"
+                     Command="{Binding LoadSensorCommand}"
+                     RefreshColor="{StaticResource GpsAccent}">
+            <CollectionView ItemsSource="{Binding Readings}"
+                            SelectionMode="Single"
+                            SelectedItem="{Binding SelectedReading}">
+                <CollectionView.Header>
+                    <VerticalStackLayout Padding="16,8,16,0" Spacing="16">
 
-            <CollectionView.ItemTemplate>
-                <DataTemplate x:DataType="models:Reading">
-                    <Border Style="{StaticResource SensorCard}"
-                            Margin="16,0,16,12">
-                        <Grid ColumnDefinitions="*,Auto"
-                              RowDefinitions="Auto,Auto"
-                              RowSpacing="4"
-                              ColumnSpacing="14">
-                            <Label Text="{Binding Value}"
-                                   TextColor="{StaticResource TextPrimary}"
-                                   FontSize="28"
-                                   FontAttributes="Bold" />
-                            <Label Grid.Column="1"
-                                   Text="{Binding Timestamp, StringFormat='{0:HH:mm}'}"
-                                   TextColor="{StaticResource TextMuted}"
-                                   FontSize="14"
-                                   VerticalOptions="Center" />
-                            <Label Grid.Row="1"
-                                   Grid.ColumnSpan="2"
-                                   Text="{Binding LocationText, StringFormat='Location: {0}'}"
-                                   IsVisible="{Binding HasLocation}"
-                                   TextColor="{StaticResource GpsAccent}"
-                                   FontSize="12" />
+                        <!-- Header row -->
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <VerticalStackLayout Spacing="2">
+                                <Label Text="{Binding Sensor.Name}"
+                                       Style="{StaticResource PageTitleLabel}" />
+                                <Label Text="Live readings"
+                                       Style="{StaticResource PageSubtitleLabel}" />
+                            </VerticalStackLayout>
+
+                            <Button Grid.Column="1"
+                                    Text="Refresh"
+                                    Command="{Binding LoadSensorCommand}"
+                                    MinimumHeightRequest="44"
+                                    Padding="14,8"
+                                    VerticalOptions="Center" />
                         </Grid>
-                    </Border>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
 
-            <CollectionView.Footer>
-                <BoxView HeightRequest="16" Color="Transparent" />
-            </CollectionView.Footer>
-        </CollectionView>
-    </RefreshView>
+                        <!-- Activity indicator -->
+                        <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                           IsVisible="{Binding IsBusy}"
+                                           HeightRequest="22" />
+
+                        <!-- Error label -->
+                        <Label Text="{Binding ErrorMessage}"
+                               TextColor="DarkRed"
+                               IsVisible="{Binding HasError}" />
+
+                        <!-- Sensor info card -->
+                        <Border Style="{StaticResource DashboardCard}">
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto"
+                                  RowSpacing="10" ColumnSpacing="14">
+                                <!-- Sensor name -->
+                                <Label Grid.Row="0"
+                                       Text="{Binding Sensor.Name}"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       LineBreakMode="TailTruncation" />
+
+                                <!-- Connected badge -->
+                                <Border Grid.Row="0"
+                                        Grid.Column="1"
+                                        Style="{StaticResource DashboardBadge}"
+                                        BackgroundColor="{StaticResource PositiveBadgeBackground}"
+                                        HorizontalOptions="End"
+                                        VerticalOptions="Center">
+                                    <Label Text="Connected"
+                                           TextColor="{StaticResource PositiveBadgeText}"
+                                           FontSize="11"
+                                           FontAttributes="Bold" />
+                                </Border>
+
+                                <!-- Type badge -->
+                                <Border Grid.Row="1"
+                                        Style="{StaticResource DashboardBadge}"
+                                        BackgroundColor="{StaticResource SoftBlue}"
+                                        HorizontalOptions="Start">
+                                    <Label Text="{Binding Sensor.Type}"
+                                           TextColor="{StaticResource TemperatureAccent}"
+                                           FontSize="11"
+                                           FontAttributes="Bold" />
+                                </Border>
+
+                                <!-- Latest reading -->
+                                <Label Grid.Row="2"
+                                       Text="{Binding Sensor.LatestReading}"
+                                       Style="{StaticResource MetricValueLabel}" />
+                            </Grid>
+                        </Border>
+
+                        <!-- Recent readings section header -->
+                        <Label Text="Recent readings"
+                               Style="{StaticResource PageTitleLabel}"
+                               Margin="0,0,0,4" />
+                    </VerticalStackLayout>
+                </CollectionView.Header>
+
+                <CollectionView.EmptyView>
+                    <Border IsVisible="{Binding IsEmpty}"
+                            BackgroundColor="{StaticResource CardBackground}"
+                            Stroke="{StaticResource CardStroke}"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 12"
+                            Padding="32"
+                            Margin="16,16,16,0"
+                            HorizontalOptions="Center">
+                        <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                            <Label Text="--"
+                                   FontSize="36"
+                                   TextColor="{StaticResource TextMuted}"
+                                   HorizontalTextAlignment="Center" />
+                            <Label Text="No readings available"
+                                   FontSize="16"
+                                   TextColor="{StaticResource TextMuted}"
+                                   HorizontalTextAlignment="Center" />
+                            <Label Text="Pull down or tap Refresh to try again"
+                                   FontSize="13"
+                                   TextColor="{StaticResource Gray300}"
+                                   HorizontalTextAlignment="Center" />
+                        </VerticalStackLayout>
+                    </Border>
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Reading">
+                        <Border Style="{StaticResource SensorCard}"
+                                Margin="16,0,16,12">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="Selected">
+                                        <VisualState.Setters>
+                                            <Setter Property="Stroke" Value="{StaticResource TemperatureAccent}" />
+                                            <Setter Property="StrokeThickness" Value="2" />
+                                            <Setter Property="BackgroundColor" Value="{StaticResource SoftBlue}" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <Grid ColumnDefinitions="*,Auto"
+                                  RowDefinitions="Auto,Auto"
+                                  RowSpacing="4"
+                                  ColumnSpacing="14">
+                                <Label Text="{Binding Value}"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       FontSize="28"
+                                       FontAttributes="Bold" />
+                                <Label Grid.Column="1"
+                                       Text="{Binding Timestamp, StringFormat='{0:HH:mm}'}"
+                                       TextColor="{StaticResource TextMuted}"
+                                       FontSize="14"
+                                       VerticalOptions="Center" />
+                                <Label Grid.Row="1"
+                                       Grid.ColumnSpan="2"
+                                       Text="{Binding LocationText, StringFormat='Location: {0}'}"
+                                       IsVisible="{Binding HasLocation}"
+                                       TextColor="{StaticResource GpsAccent}"
+                                       FontSize="12" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+                <CollectionView.Footer>
+                    <BoxView HeightRequest="16" Color="Transparent" />
+                </CollectionView.Footer>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
 </ContentPage>

@@ -36,6 +36,7 @@ On the Sensor details page, show the sensor's location on a map that updates to 
    - `partial void OnSelectedReadingChanged(...)` reacts to selection changes and rebuilds the map via `BuildMapView()`.
    - `BuildMapView()` renders a single-leaflet-marker `HtmlWebViewSource`, adapted from the dashboard's `BuildMapSource` but for one point. The popup shows the reading's value, local timestamp, and formatted coordinates. Longitude/latitude formatted with `CultureInfo.InvariantCulture`. Escapes the value text before injecting into HTML.
    - Default selection: after readings populate in `LoadSensorAsync`, pick the newest reading with `HasLocation` and set `SelectedReading`; if none, leave it null so the placeholder shows.
+   - Mounting note: `SelectionMode="Single"` + `SelectedItem` means `Readings.Clear()` during a load/refresh resets the selection and fires `OnSelectedReadingChanged` with null mid-load. `OnSelectedReadingChanged` must null-handle gracefully (it can simply rebuild the empty-map state), and the final newest-with-location reselect must be applied only *after* the list re-populates so a stale empty map does not flash.
 2. **`Pages/SensorDetailPage.xaml` (edit)**
    - Root becomes a `Grid` with `RowDefinitions="Auto,*"`:
      - Row 0: a pinned `Border` (height ~200), styled like the dashboard map card, containing the map `WebView` (visible when `HasMapLocation`) and a "No location for this reading" placeholder (visible when not).

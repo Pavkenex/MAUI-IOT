@@ -117,27 +117,6 @@ public sealed class EspReadingRepository : IEspReadingRepository
             .ToList();
     }
 
-    public async Task<int> GetReadingCountAsync()
-    {
-        await EnsureCreatedAsync();
-        return await _connection.Table<EspReading>().CountAsync();
-    }
-
-    public async Task<int> GetPendingUploadCountAsync()
-    {
-        await EnsureCreatedAsync();
-        return await _connection.Table<EspReading>()
-            .Where(r => !r.IsUploaded)
-            .CountAsync();
-    }
-
-    public async Task<IReadOnlyList<string>> GetDeviceIdsAsync()
-    {
-        await EnsureCreatedAsync();
-        var readings = await _connection.Table<EspReading>().ToListAsync();
-        return readings.Select(r => r.DeviceId).Distinct().ToList();
-    }
-
     public async Task SaveDeviceAsync(EspDeviceRecord device)
     {
         await EnsureCreatedAsync();

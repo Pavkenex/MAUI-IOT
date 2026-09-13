@@ -47,7 +47,6 @@ namespace MAUI_IOT
             builder.Services.AddTransient<ScanPageModel>();
             builder.Services.AddTransient<SensorsPageModel>();
             builder.Services.AddTransient<SensorDetailPageModel>();
-            builder.Services.AddTransient<HistoryPageModel>();
             builder.Services.AddTransient<LoginPageModel>();
             builder.Services.AddTransient<RegisterPageModel>();
 
@@ -56,7 +55,6 @@ namespace MAUI_IOT
             builder.Services.AddTransient<ScanPage>();
             builder.Services.AddTransient<SensorsPage>();
             builder.Services.AddTransient<SensorDetailPage>();
-            builder.Services.AddTransient<HistoryPage>();
             builder.Services.AddTransient<LoginPage>();
             builder.Services.AddTransient<RegisterPage>();
 

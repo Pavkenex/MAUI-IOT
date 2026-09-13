@@ -14,12 +14,6 @@ public interface IEspReadingRepository
 
     Task<IReadOnlyList<EspReading>> GetLastLocatedReadingsPerDeviceAsync(int maxDevices);
 
-    Task<int> GetReadingCountAsync();
-
-    Task<int> GetPendingUploadCountAsync();
-
-    Task<IReadOnlyList<string>> GetDeviceIdsAsync();
-
     Task SaveDeviceAsync(EspDeviceRecord device);
 
     Task<IReadOnlyList<EspDeviceRecord>> GetDevicesAsync();

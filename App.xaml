@@ -14,7 +14,6 @@
             <converters:InvertedBoolConverter x:Key="InvertedBoolConverter" />
             <converters:BoolToAuthTextConverter x:Key="BoolToAuthTextConverter" />
             <converters:IsGreaterThanZeroConverter x:Key="IsGreaterThanZeroConverter" />
-            <converters:BoolToUploadStatusConverter x:Key="BoolToUploadStatusConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -100,11 +100,11 @@ namespace MAUI_IOT.PageModels
                 }
 
                 var readings = await _sensorDataService.GetReadingsAsync(_currentSensorId);
-                foreach (var reading in readings)
+                for (var index = readings.Count - 1; index >= 0; index--)
                 {
-                    Readings.Add(reading);
+                    Readings.Add(readings[index]);
                 }
-                SelectedReading = Readings.LastOrDefault(r => r.HasLocation);
+                SelectedReading = Readings.FirstOrDefault(r => r.HasLocation);
                 NotifyStateChanged();
             }
             catch (Exception ex)

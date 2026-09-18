@@ -9,7 +9,6 @@
              Title="Sensor details">
     <Grid RowDefinitions="Auto,*">
 
-        <!-- Pinned measurement location map -->
         <Border Grid.Row="0"
                 BackgroundColor="White"
                 Stroke="#B8CCE8"
@@ -49,7 +48,6 @@
                 <CollectionView.Header>
                     <VerticalStackLayout Padding="16,8,16,0" Spacing="16">
 
-                        <!-- Header row -->
                         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                             <VerticalStackLayout Spacing="2">
                                 <Label Text="{Binding Sensor.Name}"
@@ -66,21 +64,17 @@
                                     VerticalOptions="Center" />
                         </Grid>
 
-                        <!-- Activity indicator -->
                         <ActivityIndicator IsRunning="{Binding IsBusy}"
                                            IsVisible="{Binding IsBusy}"
                                            HeightRequest="22" />
 
-                        <!-- Error label -->
                         <Label Text="{Binding ErrorMessage}"
                                TextColor="DarkRed"
                                IsVisible="{Binding HasError}" />
 
-                        <!-- Sensor info card -->
                         <Border Style="{StaticResource DashboardCard}">
                             <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto"
                                   RowSpacing="10" ColumnSpacing="14">
-                                <!-- Sensor name -->
                                 <Label Grid.Row="0"
                                        Text="{Binding Sensor.Name}"
                                        TextColor="{StaticResource TextPrimary}"
@@ -88,7 +82,6 @@
                                        FontAttributes="Bold"
                                        LineBreakMode="TailTruncation" />
 
-                                <!-- Connected badge -->
                                 <Border Grid.Row="0"
                                         Grid.Column="1"
                                         Style="{StaticResource DashboardBadge}"
@@ -101,7 +94,6 @@
                                            FontAttributes="Bold" />
                                 </Border>
 
-                                <!-- Type badge -->
                                 <Border Grid.Row="1"
                                         Style="{StaticResource DashboardBadge}"
                                         BackgroundColor="{StaticResource SoftBlue}"
@@ -112,14 +104,12 @@
                                            FontAttributes="Bold" />
                                 </Border>
 
-                                <!-- Latest reading -->
                                 <Label Grid.Row="2"
                                        Text="{Binding Sensor.LatestReading}"
                                        Style="{StaticResource MetricValueLabel}" />
                             </Grid>
                         </Border>
 
-                        <!-- Recent readings section header -->
                         <Label Text="Recent readings"
                                Style="{StaticResource PageTitleLabel}"
                                Margin="0,0,0,4" />

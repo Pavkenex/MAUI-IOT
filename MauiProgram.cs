@@ -26,7 +26,6 @@ namespace MAUI_IOT
             builder.Logging.AddDebug();
 #endif
 
-            // Services
             builder.Services.AddSingleton<ISensorDataService, SensorDataService>();
             builder.Services.AddSingleton<IEspReadingRepository, EspReadingRepository>();
             builder.Services.AddSingleton<IEspBluetoothService, EspBluetoothService>();
@@ -42,7 +41,6 @@ namespace MAUI_IOT
             builder.Services.AddSingleton<IAuthService, AuthService>();
             builder.Services.AddSingleton<ReadingUploadService>();
 
-            // Page models
             builder.Services.AddTransient<DashboardPageModel>();
             builder.Services.AddTransient<ScanPageModel>();
             builder.Services.AddTransient<SensorsPageModel>();
@@ -50,7 +48,6 @@ namespace MAUI_IOT
             builder.Services.AddTransient<LoginPageModel>();
             builder.Services.AddTransient<RegisterPageModel>();
 
-            // Pages
             builder.Services.AddTransient<DashboardPage>();
             builder.Services.AddTransient<ScanPage>();
             builder.Services.AddTransient<SensorsPage>();

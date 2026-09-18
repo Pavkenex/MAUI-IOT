@@ -60,7 +60,6 @@
                        TextColor="DarkRed"
                        IsVisible="{Binding HasError}" />
 
-                <!-- Latest ESP reading card -->
                 <Border BackgroundColor="{StaticResource GpsCardBackground}"
                         Stroke="#B8CCE8"
                         StrokeThickness="1"
@@ -119,7 +118,6 @@
                             </VerticalStackLayout>
                         </Grid>
 
-                        <!-- Measurement location map -->
                         <Border BackgroundColor="White"
                                 Stroke="#B8CCE8"
                                 StrokeThickness="1"

@@ -24,7 +24,6 @@
                    TextColor="DarkRed"
                    IsVisible="{Binding HasError}" />
 
-            <!-- Bluetooth Status Card -->
             <Border Style="{StaticResource DashboardCard}">
                 <VerticalStackLayout Spacing="12">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
@@ -49,7 +48,6 @@
                 </VerticalStackLayout>
             </Border>
 
-            <!-- Discovered devices -->
             <Label Text="Discovered ESP Devices"
                    TextColor="{StaticResource TextPrimary}"
                    FontSize="18"

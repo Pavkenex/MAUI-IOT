@@ -9,7 +9,7 @@
              Title="Sensor details">
     <Grid MaximumWidthRequest="{OnIdiom Desktop=1400, Default=100000}"
           ColumnDefinitions="*,*"
-          RowDefinitions="Auto,Auto,Auto,*"
+          RowDefinitions="Auto,Auto,*"
           RowSpacing="12"
           ColumnSpacing="16">
 
@@ -33,83 +33,86 @@
                     VerticalOptions="Center" />
         </Grid>
 
-        <Border Grid.Row="1"
-                Grid.Column="0"
-                Grid.ColumnSpan="{OnIdiom Desktop=1, Default=2}"
-                BackgroundColor="White"
-                Stroke="#B8CCE8"
-                StrokeThickness="1"
-                StrokeShape="RoundRectangle 12"
-                Padding="0"
-                Margin="16,0,16,0"
-                HeightRequest="{OnIdiom Desktop=320, Default=200}">
-            <Grid>
-                <WebView Source="{Binding MapSource}"
-                         UserAgent="MauiIot/1.0"
-                         IsVisible="{Binding HasMapLocation}" />
+        <Grid Grid.Row="1"
+              Grid.RowSpan="{OnIdiom Desktop=2, Default=1}"
+              Grid.Column="0"
+              Grid.ColumnSpan="{OnIdiom Desktop=1, Default=2}"
+              RowDefinitions="*,Auto"
+              RowSpacing="12">
 
-                <VerticalStackLayout IsVisible="{Binding HasMapLocation, Converter={StaticResource InvertedBoolConverter}}"
-                                     Spacing="8"
-                                     VerticalOptions="Center"
-                                     Padding="20">
-                    <Label Text="No location for this reading"
-                           TextColor="{StaticResource MapPlaceholder}"
-                           FontSize="14"
+            <Border BackgroundColor="White"
+                    Stroke="#B8CCE8"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 12"
+                    Padding="0"
+                    Margin="16,0,16,0"
+                    MinimumHeightRequest="{OnIdiom Desktop=280, Default=200}">
+                <Grid>
+                    <WebView Source="{Binding MapSource}"
+                             UserAgent="MauiIot/1.0"
+                             IsVisible="{Binding HasMapLocation}" />
+
+                    <VerticalStackLayout IsVisible="{Binding HasMapLocation, Converter={StaticResource InvertedBoolConverter}}"
+                                         Spacing="8"
+                                         VerticalOptions="Center"
+                                         Padding="20">
+                        <Label Text="No location for this reading"
+                               TextColor="{StaticResource MapPlaceholder}"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               HorizontalTextAlignment="Center" />
+                        <Label Text="Location is captured from this phone when readings are received from the ESP."
+                               TextColor="{StaticResource TextMuted}"
+                               FontSize="12"
+                               HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="1"
+                    Style="{StaticResource DashboardCard}"
+                    Margin="16,0,16,16">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto"
+                      RowSpacing="10" ColumnSpacing="14">
+                    <Label Grid.Row="0"
+                           Text="{Binding Sensor.Name}"
+                           TextColor="{StaticResource TextPrimary}"
+                           FontSize="18"
                            FontAttributes="Bold"
-                           HorizontalTextAlignment="Center" />
-                    <Label Text="Location is captured from this phone when readings are received from the ESP."
-                           TextColor="{StaticResource TextMuted}"
-                           FontSize="12"
-                           HorizontalTextAlignment="Center" />
-                </VerticalStackLayout>
-            </Grid>
-        </Border>
+                           LineBreakMode="TailTruncation" />
 
-        <Border Grid.Row="2"
-                Grid.Column="0"
-                Grid.ColumnSpan="{OnIdiom Desktop=1, Default=2}"
-                Style="{StaticResource DashboardCard}"
-                Margin="16,0,16,0">
-            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto"
-                  RowSpacing="10" ColumnSpacing="14">
-                <Label Grid.Row="0"
-                       Text="{Binding Sensor.Name}"
-                       TextColor="{StaticResource TextPrimary}"
-                       FontSize="18"
-                       FontAttributes="Bold"
-                       LineBreakMode="TailTruncation" />
+                    <Border Grid.Row="0"
+                            Grid.Column="1"
+                            Style="{StaticResource DashboardBadge}"
+                            BackgroundColor="{StaticResource PositiveBadgeBackground}"
+                            HorizontalOptions="End"
+                            VerticalOptions="Center">
+                        <Label Text="Connected"
+                               TextColor="{StaticResource PositiveBadgeText}"
+                               FontSize="11"
+                               FontAttributes="Bold" />
+                    </Border>
 
-                <Border Grid.Row="0"
-                        Grid.Column="1"
-                        Style="{StaticResource DashboardBadge}"
-                        BackgroundColor="{StaticResource PositiveBadgeBackground}"
-                        HorizontalOptions="End"
-                        VerticalOptions="Center">
-                    <Label Text="Connected"
-                           TextColor="{StaticResource PositiveBadgeText}"
-                           FontSize="11"
-                           FontAttributes="Bold" />
-                </Border>
+                    <Border Grid.Row="1"
+                            Style="{StaticResource DashboardBadge}"
+                            BackgroundColor="{StaticResource SoftBlue}"
+                            HorizontalOptions="Start">
+                        <Label Text="{Binding Sensor.Type}"
+                               TextColor="{StaticResource TemperatureAccent}"
+                               FontSize="11"
+                               FontAttributes="Bold" />
+                    </Border>
 
-                <Border Grid.Row="1"
-                        Style="{StaticResource DashboardBadge}"
-                        BackgroundColor="{StaticResource SoftBlue}"
-                        HorizontalOptions="Start">
-                    <Label Text="{Binding Sensor.Type}"
-                           TextColor="{StaticResource TemperatureAccent}"
-                           FontSize="11"
-                           FontAttributes="Bold" />
-                </Border>
+                    <Label Grid.Row="2"
+                           Text="{Binding Sensor.LatestReading}"
+                           Style="{StaticResource MetricValueLabel}" />
+                </Grid>
+            </Border>
+        </Grid>
 
-                <Label Grid.Row="2"
-                       Text="{Binding Sensor.LatestReading}"
-                       Style="{StaticResource MetricValueLabel}" />
-            </Grid>
-        </Border>
-
-        <RefreshView Grid.Row="{OnIdiom Desktop=1, Default=3}"
+        <RefreshView Grid.Row="{OnIdiom Desktop=1, Default=2}"
                      Grid.Column="{OnIdiom Desktop=1, Default=0}"
-                     Grid.RowSpan="{OnIdiom Desktop=3, Default=1}"
+                     Grid.RowSpan="{OnIdiom Desktop=2, Default=1}"
                      Grid.ColumnSpan="{OnIdiom Desktop=1, Default=2}"
                      Margin="16,0,16,0"
                      IsRefreshing="{Binding IsRefreshing}"

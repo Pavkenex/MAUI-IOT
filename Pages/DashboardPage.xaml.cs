@@ -8,12 +8,14 @@ public partial class DashboardPage : ContentPage
 {
 	private readonly DashboardPageModel _pageModel;
 	private readonly EspAutoSyncService _autoSyncService;
+	private readonly CloudSyncService _cloudSyncService;
 
-	public DashboardPage(DashboardPageModel pageModel, EspAutoSyncService autoSyncService)
+	public DashboardPage(DashboardPageModel pageModel, EspAutoSyncService autoSyncService, CloudSyncService cloudSyncService)
 	{
 		InitializeComponent();
 		_pageModel = pageModel;
 		_autoSyncService = autoSyncService;
+		_cloudSyncService = cloudSyncService;
 		BindingContext = _pageModel;
 	}
 
@@ -22,6 +24,8 @@ public partial class DashboardPage : ContentPage
         base.OnAppearing();
         _autoSyncService.ReadingsUpdated -= OnReadingsUpdated;
         _autoSyncService.ReadingsUpdated += OnReadingsUpdated;
+        _cloudSyncService.ReadingsUpdated -= OnReadingsUpdated;
+        _cloudSyncService.ReadingsUpdated += OnReadingsUpdated;
         await _pageModel.LoadDashboardCommand.ExecuteAsync(null);
     }
 
@@ -29,6 +33,7 @@ public partial class DashboardPage : ContentPage
 	{
 		base.OnDisappearing();
 		_autoSyncService.ReadingsUpdated -= OnReadingsUpdated;
+		_cloudSyncService.ReadingsUpdated -= OnReadingsUpdated;
 	}
 
 	private void OnReadingsUpdated(object? sender, EventArgs e)

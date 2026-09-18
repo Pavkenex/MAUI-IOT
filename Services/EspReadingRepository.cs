@@ -70,6 +70,34 @@ public sealed class EspReadingRepository : IEspReadingRepository
         }
     }
 
+    public async Task<int> ImportCloudReadingsAsync(IReadOnlyList<EspReading> readings)
+    {
+        await EnsureCreatedAsync();
+
+        var imported = 0;
+        foreach (var reading in readings)
+        {
+            if (await ExistsAsync(reading.DeviceId, reading.BootSessionId, reading.ReadingId))
+            {
+                continue;
+            }
+
+            reading.IsUploaded = true;
+            reading.UploadedAtUtc ??= DateTimeOffset.UtcNow;
+
+            try
+            {
+                await _connection.InsertAsync(reading);
+                imported++;
+            }
+            catch (SQLiteException ex) when (ex.Result == SQLite3.Result.Constraint)
+            {
+            }
+        }
+
+        return imported;
+    }
+
     public async Task<IReadOnlyList<EspReading>> GetReadingsAsync(
         string? deviceId = null,
         uint? bootSessionId = null,
@@ -110,6 +138,21 @@ public sealed class EspReadingRepository : IEspReadingRepository
 
         return readings
             .Where(r => r.Latitude is not null && r.Longitude is not null)
+            .GroupBy(r => r.DeviceId)
+            .Select(group => group.First())
+            .OrderByDescending(r => r.RecordedAtUtc)
+            .Take(maxDevices)
+            .ToList();
+    }
+
+    public async Task<IReadOnlyList<EspReading>> GetLatestReadingsPerDeviceAsync(int maxDevices)
+    {
+        await EnsureCreatedAsync();
+        var readings = await _connection.Table<EspReading>()
+            .OrderByDescending(r => r.RecordedAtUtc)
+            .ToListAsync();
+
+        return readings
             .GroupBy(r => r.DeviceId)
             .Select(group => group.First())
             .OrderByDescending(r => r.RecordedAtUtc)

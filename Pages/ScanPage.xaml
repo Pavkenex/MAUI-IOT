@@ -8,7 +8,9 @@
              BackgroundColor="{StaticResource AppBackground}"
              Title="Scan">
     <ScrollView>
-        <VerticalStackLayout Padding="16,16,16,28" Spacing="16">
+        <VerticalStackLayout Padding="16,16,16,28"
+                             Spacing="16"
+                             MaximumWidthRequest="{OnIdiom Desktop=1400, Default=100000}">
             <VerticalStackLayout Spacing="2">
                 <Label Text="ESP Discovery"
                        Style="{StaticResource PageTitleLabel}" />
@@ -57,6 +59,12 @@
 
             <CollectionView ItemsSource="{Binding Devices}"
                             IsVisible="{Binding HasDevices}">
+                <CollectionView.ItemsLayout>
+                    <GridItemsLayout Orientation="Vertical"
+                                     Span="{OnIdiom Desktop=2, Default=1}"
+                                     HorizontalItemSpacing="14" />
+                </CollectionView.ItemsLayout>
+
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:EspDeviceRow">
                         <Border BackgroundColor="{StaticResource CardBackground}"

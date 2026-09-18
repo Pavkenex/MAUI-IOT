@@ -10,7 +10,9 @@
                  RefreshColor="{StaticResource GpsAccent}">
         <ScrollView>
             <VerticalStackLayout Padding="16,16,16,28" Spacing="16">
-                <Grid RowDefinitions="Auto,Auto" RowSpacing="10">
+                <Grid MaximumWidthRequest="{OnIdiom Desktop=1400, Default=100000}"
+                      RowDefinitions="Auto,Auto"
+                      RowSpacing="10">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                         <VerticalStackLayout Spacing="2">
                             <Label Text="ESP Readings Dashboard" Style="{StaticResource PageTitleLabel}" />
@@ -25,7 +27,7 @@
                                 VerticalOptions="Center" />
                     </Grid>
 
-                    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
                         <VerticalStackLayout Spacing="1" VerticalOptions="Center">
                             <Label Text="ACCOUNT" Style="{StaticResource MetricTitleLabel}" />
                             <Label Text="{Binding AccountName}"
@@ -52,13 +54,16 @@
                     </Grid>
                 </Grid>
 
-                <ActivityIndicator IsRunning="{Binding IsBusy}"
-                                   IsVisible="{Binding IsBusy}"
-                                   HeightRequest="22" />
+                <VerticalStackLayout Spacing="8"
+                                     MaximumWidthRequest="{OnIdiom Desktop=1400, Default=100000}">
+                    <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                       IsVisible="{Binding IsBusy}"
+                                       HeightRequest="22" />
 
-                <Label Text="{Binding ErrorMessage}"
-                       TextColor="DarkRed"
-                       IsVisible="{Binding HasError}" />
+                    <Label Text="{Binding ErrorMessage}"
+                           TextColor="DarkRed"
+                           IsVisible="{Binding HasError}" />
+                </VerticalStackLayout>
 
                 <Border BackgroundColor="{StaticResource GpsCardBackground}"
                         Stroke="#B8CCE8"
@@ -66,7 +71,9 @@
                         StrokeShape="RoundRectangle 12"
                         Padding="20">
                     <VerticalStackLayout Spacing="16">
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <Grid ColumnDefinitions="*,Auto"
+                              ColumnSpacing="12"
+                              MaximumWidthRequest="{OnIdiom Desktop=1400, Default=100000}">
                             <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
                                 <Label Text="⌖"
                                        FontSize="26"
@@ -95,7 +102,10 @@
                             </Border>
                         </Grid>
 
-                        <Grid ColumnDefinitions="*,1,*" ColumnSpacing="16" RowSpacing="6">
+                        <Grid ColumnDefinitions="*,1,*"
+                              ColumnSpacing="16"
+                              RowSpacing="6"
+                              MaximumWidthRequest="{OnIdiom Desktop=1400, Default=100000}">
                             <VerticalStackLayout Spacing="2">
                                 <Label Text="TEMPERATURE" Style="{StaticResource MetricTitleLabel}" />
                                 <Label Text="{Binding Temperature}"
@@ -123,10 +133,11 @@
                                 StrokeThickness="1"
                                 StrokeShape="RoundRectangle 12"
                                 Padding="0"
-                                HeightRequest="190">
+                                HeightRequest="{OnIdiom Desktop=520, Default=190}">
                             <Grid>
                                 <WebView x:Name="MapWebView"
                                          Source="{Binding MapSource}"
+                                         UserAgent="MauiIot/1.0"
                                          IsVisible="{Binding HasLatestLocation}"
                                          Navigating="OnMapNavigating" />
 
@@ -149,7 +160,8 @@
                     </VerticalStackLayout>
                 </Border>
 
-                <Border Style="{StaticResource DashboardCard}">
+                <Border Style="{StaticResource DashboardCard}"
+                        MaximumWidthRequest="{OnIdiom Desktop=1400, Default=100000}">
                     <VerticalStackLayout Spacing="16">
                         <VerticalStackLayout Spacing="2">
                             <Label Text="{Binding TrendTitle}"
@@ -163,6 +175,8 @@
 
                         <Grid ColumnDefinitions="*,*"
                               ColumnSpacing="8"
+                              MaximumWidthRequest="{OnIdiom Desktop=380, Default=100000}"
+                              HorizontalOptions="{OnIdiom Desktop=Start, Default=Fill}"
                               IsVisible="{Binding Trend.HasData}">
                             <Button Text="Temperature"
                                     Command="{Binding Trend.SelectTemperatureCommand}"
@@ -205,7 +219,7 @@
                         </Grid>
 
                         <lvc:CartesianChart IsVisible="{Binding Trend.HasData}"
-                                            HeightRequest="236"
+                                            HeightRequest="{OnIdiom Desktop=320, Default=236}"
                                             Series="{Binding Trend.Series}"
                                             XAxes="{Binding Trend.XAxes}"
                                             YAxes="{Binding Trend.YAxes}"

@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:MAUI_IOT"
     xmlns:pages="clr-namespace:MAUI_IOT.Pages"
-    Title="MAUI_IOT"
+    Title="MAUI &amp; IOT"
     Shell.BackgroundColor="{StaticResource CardBackground}"
     Shell.ForegroundColor="{StaticResource TextPrimary}"
     Shell.TitleColor="{StaticResource TextPrimary}"

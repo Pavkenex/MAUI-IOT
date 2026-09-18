@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using MauiIot.Api.Models;
 using Microsoft.Azure.Cosmos;
 
@@ -62,6 +63,40 @@ public sealed class CosmosStore
         }
 
         return accepted;
+    }
+
+    public async Task<IReadOnlyList<ReadingDocument>> GetReadingsAsync(
+        string userId,
+        string? deviceId = null,
+        int limit = 200,
+        CancellationToken cancellationToken = default)
+    {
+        await _initialization.Value;
+
+        var sql = new StringBuilder("SELECT TOP @limit * FROM c WHERE c.userId = @userId");
+        if (!string.IsNullOrWhiteSpace(deviceId))
+        {
+            sql.Append(" AND c.deviceId = @deviceId");
+        }
+        sql.Append(" ORDER BY c.recordedAtUtc DESC");
+
+        var query = new QueryDefinition(sql.ToString())
+            .WithParameter("@limit", limit)
+            .WithParameter("@userId", userId);
+        if (!string.IsNullOrWhiteSpace(deviceId))
+        {
+            query = query.WithParameter("@deviceId", deviceId);
+        }
+
+        var results = new List<ReadingDocument>(limit);
+        using var iterator = _readings.GetItemQueryIterator<ReadingDocument>(query);
+        while (results.Count < limit && iterator.HasMoreResults)
+        {
+            var page = await iterator.ReadNextAsync(cancellationToken);
+            results.AddRange(page);
+        }
+
+        return results.Count > limit ? results.Take(limit).ToList() : results;
     }
 
     public static string BuildReadingId(string userId, string deviceId, uint bootSessionId, uint readingId)

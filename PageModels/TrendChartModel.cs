@@ -254,7 +254,8 @@ public partial class TrendChartModel : ObservableObject
 
     private Axis BuildYAxis() => new()
     {
-        Labeler = value => IsTemperatureSelected ? $"{value:0.#}°C" : $"{value:0.#}%",
+        Labeler = value => IsTemperatureSelected ? $"{value:0.##}°C" : $"{value:0.#}%",
+        MinStep = IsTemperatureSelected ? 0.1 : 1,
         TextSize = 11,
         LabelsPaint = new SolidColorPaint(SKColor.Parse("#6E7890")),
         SeparatorsPaint = new SolidColorPaint(SKColor.Parse("#E1E1E1")),

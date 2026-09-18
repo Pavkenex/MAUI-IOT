@@ -5,6 +5,7 @@ namespace MAUI_IOT.Services;
 public sealed class SensorDataService : ISensorDataService
 {
     private const int ReadingsHistoryLimit = 200;
+    private const int MaxDevices = 100;
 
     private readonly IEspReadingRepository _repository;
 
@@ -16,25 +17,44 @@ public sealed class SensorDataService : ISensorDataService
     public async Task<IReadOnlyList<SensorSummary>> GetSensorsAsync()
     {
         var devices = await _repository.GetDevicesAsync();
-        var sensors = new List<SensorSummary>();
+        var latestPerDevice = await _repository.GetLatestReadingsPerDeviceAsync(MaxDevices);
+
+        var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var device in devices)
         {
-            var name = string.IsNullOrWhiteSpace(device.Name)
-                ? $"DHT22 {ShortDeviceId(device.DeviceId)}"
-                : device.Name;
-            var latest = await _repository.GetLatestReadingAsync(device.DeviceId);
+            names[device.DeviceId] = device.Name;
+        }
+
+        var latestByDevice = new Dictionary<string, EspReading>(StringComparer.OrdinalIgnoreCase);
+        foreach (var reading in latestPerDevice)
+        {
+            latestByDevice[reading.DeviceId] = reading;
+        }
+
+        var deviceIds = names.Keys
+            .Union(latestByDevice.Keys, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var sensors = new List<SensorSummary>(deviceIds.Count * 2);
+        foreach (var deviceId in deviceIds)
+        {
+            var storedName = names.TryGetValue(deviceId, out var value) ? value : string.Empty;
+            var name = string.IsNullOrWhiteSpace(storedName)
+                ? $"DHT22 {ShortDeviceId(deviceId)}"
+                : storedName;
+            latestByDevice.TryGetValue(deviceId, out var latest);
             var isOnline = latest is not null;
 
             sensors.Add(new SensorSummary(
-                SensorIdHasher.ForDevice(device.DeviceId, isTemperature: true),
-                device.DeviceId,
+                SensorIdHasher.ForDevice(deviceId, isTemperature: true),
+                deviceId,
                 name,
                 "Temperature",
                 isOnline,
                 latest is null ? "--" : $"{latest.TemperatureCelsius:F1}°C"));
             sensors.Add(new SensorSummary(
-                SensorIdHasher.ForDevice(device.DeviceId, isTemperature: false),
-                device.DeviceId,
+                SensorIdHasher.ForDevice(deviceId, isTemperature: false),
+                deviceId,
                 name,
                 "Humidity",
                 isOnline,
@@ -83,16 +103,21 @@ public sealed class SensorDataService : ISensorDataService
     private async Task<(string DeviceId, bool IsTemperature)?> ResolveSensorAsync(int sensorId)
     {
         var devices = await _repository.GetDevicesAsync();
-        foreach (var device in devices)
+        var latestPerDevice = await _repository.GetLatestReadingsPerDeviceAsync(MaxDevices);
+        var deviceIds = devices.Select(d => d.DeviceId)
+            .Concat(latestPerDevice.Select(r => r.DeviceId))
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var deviceId in deviceIds)
         {
-            if (SensorIdHasher.ForDevice(device.DeviceId, isTemperature: true) == sensorId)
+            if (SensorIdHasher.ForDevice(deviceId, isTemperature: true) == sensorId)
             {
-                return (device.DeviceId, true);
+                return (deviceId, true);
             }
 
-            if (SensorIdHasher.ForDevice(device.DeviceId, isTemperature: false) == sensorId)
+            if (SensorIdHasher.ForDevice(deviceId, isTemperature: false) == sensorId)
             {
-                return (device.DeviceId, false);
+                return (deviceId, false);
             }
         }
 

@@ -54,6 +54,36 @@ public sealed class ReadingUploadResponse
     public int Accepted { get; set; }
 }
 
+public sealed class ReadingsResponse
+{
+    public List<ReadingItem> Readings { get; set; } = [];
+}
+
+public sealed class ReadingItem
+{
+    public string Id { get; set; } = string.Empty;
+
+    public string DeviceId { get; set; } = string.Empty;
+
+    public uint BootSessionId { get; set; }
+
+    public uint ReadingId { get; set; }
+
+    public uint ElapsedSeconds { get; set; }
+
+    public double TemperatureCelsius { get; set; }
+
+    public double HumidityPercent { get; set; }
+
+    public double? Latitude { get; set; }
+
+    public double? Longitude { get; set; }
+
+    public DateTimeOffset RecordedAtUtc { get; set; }
+
+    public DateTimeOffset ReceivedAtUtc { get; set; }
+}
+
 public sealed class ErrorResponse
 {
     public string Error { get; set; } = string.Empty;

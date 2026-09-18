@@ -62,6 +62,46 @@ public sealed class ApiClient : IApiClient
         }
     }
 
+    public async Task<ApiResult<ReadingsResponse>> GetReadingsAsync(
+        string token,
+        string? deviceId = null,
+        int limit = 200,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var route = $"readings?limit={limit}";
+            if (!string.IsNullOrWhiteSpace(deviceId))
+            {
+                route += $"&deviceId={Uri.EscapeDataString(deviceId)}";
+            }
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, route);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            using var response = await _http.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return ApiResult<ReadingsResponse>.Fail(
+                    await ReadErrorAsync(response, cancellationToken),
+                    (int)response.StatusCode);
+            }
+
+            var payload = await response.Content.ReadFromJsonAsync<ReadingsResponse>(JsonOptions, cancellationToken);
+            return payload is null
+                ? ApiResult<ReadingsResponse>.Fail("Empty response from server.", (int)response.StatusCode)
+                : ApiResult<ReadingsResponse>.Ok(payload, (int)response.StatusCode);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            return ApiResult<ReadingsResponse>.Fail("Network error. Check your connection.", 0);
+        }
+    }
+
     private async Task<ApiResult<AuthResponse>> PostAuthAsync(
         string route,
         string username,

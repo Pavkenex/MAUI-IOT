@@ -11,7 +11,9 @@
                  Command="{Binding LoadSensorsCommand}"
                  RefreshColor="{StaticResource GpsAccent}">
         <ScrollView>
-            <VerticalStackLayout Padding="16,16,16,28" Spacing="16">
+            <VerticalStackLayout Padding="16,16,16,28"
+                                 Spacing="16"
+                                 MaximumWidthRequest="{OnIdiom Desktop=1400, Default=100000}">
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                     <VerticalStackLayout Spacing="2">
                         <Label Text="IoT Sensors"
@@ -60,6 +62,12 @@
                 </Border>
 
                 <CollectionView ItemsSource="{Binding Sensors}">
+                    <CollectionView.ItemsLayout>
+                        <GridItemsLayout Orientation="Vertical"
+                                         Span="{OnIdiom Desktop=2, Default=1}"
+                                         HorizontalItemSpacing="14" />
+                    </CollectionView.ItemsLayout>
+
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="models:SensorSummary">
                             <Border Style="{StaticResource SensorCard}">

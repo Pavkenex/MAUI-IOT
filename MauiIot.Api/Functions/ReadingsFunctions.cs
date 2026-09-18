@@ -10,6 +10,8 @@ namespace MauiIot.Api.Functions;
 public sealed class ReadingsFunctions
 {
     private const int MaxBatchSize = 500;
+    private const int MaxReadLimit = 1000;
+    private const int DefaultReadLimit = 200;
 
     private readonly CosmosStore _store;
     private readonly TokenService _tokens;
@@ -90,6 +92,61 @@ public sealed class ReadingsFunctions
             new ReadingUploadResponse { Accepted = accepted },
             cancellationToken);
     }
+
+    [Function("GetReadings")]
+    public async Task<HttpResponseData> GetAsync(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "readings")] HttpRequestData request,
+        CancellationToken cancellationToken)
+    {
+        var principal = Authenticate(request);
+        var userId = principal?.FindFirst("sub")?.Value;
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            return await HttpHelpers.JsonAsync(
+                request,
+                HttpStatusCode.Unauthorized,
+                new ErrorResponse { Error = "Missing or invalid token." },
+                cancellationToken);
+        }
+
+        var limit = DefaultReadLimit;
+        var limitValue = request.Query["limit"];
+        if (int.TryParse(limitValue, out var parsedLimit) && parsedLimit > 0)
+        {
+            limit = Math.Min(parsedLimit, MaxReadLimit);
+        }
+
+        string? deviceId = null;
+        var deviceValue = request.Query["deviceId"];
+        if (!string.IsNullOrWhiteSpace(deviceValue))
+        {
+            deviceId = deviceValue.Trim();
+        }
+
+        var documents = await _store.GetReadingsAsync(userId, deviceId, limit, cancellationToken);
+
+        return await HttpHelpers.JsonAsync(
+            request,
+            HttpStatusCode.OK,
+            new ReadingsResponse { Readings = documents.Select(MapItem).ToList() },
+            cancellationToken);
+    }
+
+    private static ReadingItem MapItem(ReadingDocument document) => new()
+    {
+        Id = document.Id,
+        DeviceId = document.DeviceId,
+        BootSessionId = document.BootSessionId,
+        ReadingId = document.ReadingId,
+        ElapsedSeconds = document.ElapsedSeconds,
+        TemperatureCelsius = document.TemperatureCelsius,
+        HumidityPercent = document.HumidityPercent,
+        Latitude = document.Latitude,
+        Longitude = document.Longitude,
+        RecordedAtUtc = document.RecordedAtUtc,
+        ReceivedAtUtc = document.ReceivedAtUtc,
+    };
 
     private ClaimsPrincipal? Authenticate(HttpRequestData request)
     {

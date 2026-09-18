@@ -8,11 +8,15 @@ public interface IEspReadingRepository
 
     Task<int> InsertIdempotentAsync(EspReading reading);
 
+    Task<int> ImportCloudReadingsAsync(IReadOnlyList<EspReading> readings);
+
     Task<IReadOnlyList<EspReading>> GetReadingsAsync(string? deviceId = null, uint? bootSessionId = null, int limit = 200);
 
     Task<EspReading?> GetLatestReadingAsync(string deviceId);
 
     Task<IReadOnlyList<EspReading>> GetLastLocatedReadingsPerDeviceAsync(int maxDevices);
+
+    Task<IReadOnlyList<EspReading>> GetLatestReadingsPerDeviceAsync(int maxDevices);
 
     Task SaveDeviceAsync(EspDeviceRecord device);
 

@@ -40,6 +40,7 @@ namespace MAUI_IOT
             builder.Services.AddSingleton<IApiClient, ApiClient>();
             builder.Services.AddSingleton<IAuthService, AuthService>();
             builder.Services.AddSingleton<ReadingUploadService>();
+            builder.Services.AddSingleton<CloudSyncService>();
 
             builder.Services.AddTransient<DashboardPageModel>();
             builder.Services.AddTransient<ScanPageModel>();

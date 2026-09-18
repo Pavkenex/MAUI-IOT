@@ -45,7 +45,10 @@ public sealed class AuthService : IAuthService
             SessionStore.Remove(TokenKey);
             SessionStore.Remove(UsernameKey);
             SessionStore.Remove(ExpiresKey);
+            return;
         }
+
+        SessionChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public async Task<ApiResult<AuthResponse>> RegisterAsync(

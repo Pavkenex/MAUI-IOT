@@ -7,18 +7,45 @@
              x:Class="MAUI_IOT.Pages.SensorDetailPage"
              BackgroundColor="{StaticResource AppBackground}"
              Title="Sensor details">
-    <Grid RowDefinitions="Auto,*">
+    <Grid MaximumWidthRequest="{OnIdiom Desktop=1400, Default=100000}"
+          ColumnDefinitions="*,*"
+          RowDefinitions="Auto,Auto,Auto,*"
+          RowSpacing="12"
+          ColumnSpacing="16">
 
-        <Border Grid.Row="0"
+        <Grid Grid.Row="0"
+              Grid.ColumnSpan="2"
+              Padding="16,16,16,0"
+              ColumnDefinitions="*,Auto"
+              ColumnSpacing="12">
+            <VerticalStackLayout Spacing="2">
+                <Label Text="{Binding Sensor.Name}"
+                       Style="{StaticResource PageTitleLabel}" />
+                <Label Text="Live readings"
+                       Style="{StaticResource PageSubtitleLabel}" />
+            </VerticalStackLayout>
+
+            <Button Grid.Column="1"
+                    Text="Refresh"
+                    Command="{Binding LoadSensorCommand}"
+                    MinimumHeightRequest="44"
+                    Padding="14,8"
+                    VerticalOptions="Center" />
+        </Grid>
+
+        <Border Grid.Row="1"
+                Grid.Column="0"
+                Grid.ColumnSpan="{OnIdiom Desktop=1, Default=2}"
                 BackgroundColor="White"
                 Stroke="#B8CCE8"
                 StrokeThickness="1"
                 StrokeShape="RoundRectangle 12"
                 Padding="0"
-                Margin="16,16,16,8"
-                HeightRequest="200">
+                Margin="16,0,16,0"
+                HeightRequest="{OnIdiom Desktop=320, Default=200}">
             <Grid>
                 <WebView Source="{Binding MapSource}"
+                         UserAgent="MauiIot/1.0"
                          IsVisible="{Binding HasMapLocation}" />
 
                 <VerticalStackLayout IsVisible="{Binding HasMapLocation, Converter={StaticResource InvertedBoolConverter}}"
@@ -38,7 +65,53 @@
             </Grid>
         </Border>
 
-        <RefreshView Grid.Row="1"
+        <Border Grid.Row="2"
+                Grid.Column="0"
+                Grid.ColumnSpan="{OnIdiom Desktop=1, Default=2}"
+                Style="{StaticResource DashboardCard}"
+                Margin="16,0,16,0">
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto"
+                  RowSpacing="10" ColumnSpacing="14">
+                <Label Grid.Row="0"
+                       Text="{Binding Sensor.Name}"
+                       TextColor="{StaticResource TextPrimary}"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       LineBreakMode="TailTruncation" />
+
+                <Border Grid.Row="0"
+                        Grid.Column="1"
+                        Style="{StaticResource DashboardBadge}"
+                        BackgroundColor="{StaticResource PositiveBadgeBackground}"
+                        HorizontalOptions="End"
+                        VerticalOptions="Center">
+                    <Label Text="Connected"
+                           TextColor="{StaticResource PositiveBadgeText}"
+                           FontSize="11"
+                           FontAttributes="Bold" />
+                </Border>
+
+                <Border Grid.Row="1"
+                        Style="{StaticResource DashboardBadge}"
+                        BackgroundColor="{StaticResource SoftBlue}"
+                        HorizontalOptions="Start">
+                    <Label Text="{Binding Sensor.Type}"
+                           TextColor="{StaticResource TemperatureAccent}"
+                           FontSize="11"
+                           FontAttributes="Bold" />
+                </Border>
+
+                <Label Grid.Row="2"
+                       Text="{Binding Sensor.LatestReading}"
+                       Style="{StaticResource MetricValueLabel}" />
+            </Grid>
+        </Border>
+
+        <RefreshView Grid.Row="{OnIdiom Desktop=1, Default=3}"
+                     Grid.Column="{OnIdiom Desktop=1, Default=0}"
+                     Grid.RowSpan="{OnIdiom Desktop=3, Default=1}"
+                     Grid.ColumnSpan="{OnIdiom Desktop=1, Default=2}"
+                     Margin="16,0,16,0"
                      IsRefreshing="{Binding IsRefreshing}"
                      Command="{Binding LoadSensorCommand}"
                      RefreshColor="{StaticResource GpsAccent}">
@@ -46,24 +119,7 @@
                             SelectionMode="Single"
                             SelectedItem="{Binding SelectedReading}">
                 <CollectionView.Header>
-                    <VerticalStackLayout Padding="16,8,16,0" Spacing="16">
-
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                            <VerticalStackLayout Spacing="2">
-                                <Label Text="{Binding Sensor.Name}"
-                                       Style="{StaticResource PageTitleLabel}" />
-                                <Label Text="Live readings"
-                                       Style="{StaticResource PageSubtitleLabel}" />
-                            </VerticalStackLayout>
-
-                            <Button Grid.Column="1"
-                                    Text="Refresh"
-                                    Command="{Binding LoadSensorCommand}"
-                                    MinimumHeightRequest="44"
-                                    Padding="14,8"
-                                    VerticalOptions="Center" />
-                        </Grid>
-
+                    <VerticalStackLayout Spacing="12">
                         <ActivityIndicator IsRunning="{Binding IsBusy}"
                                            IsVisible="{Binding IsBusy}"
                                            HeightRequest="22" />
@@ -72,47 +128,8 @@
                                TextColor="DarkRed"
                                IsVisible="{Binding HasError}" />
 
-                        <Border Style="{StaticResource DashboardCard}">
-                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto"
-                                  RowSpacing="10" ColumnSpacing="14">
-                                <Label Grid.Row="0"
-                                       Text="{Binding Sensor.Name}"
-                                       TextColor="{StaticResource TextPrimary}"
-                                       FontSize="18"
-                                       FontAttributes="Bold"
-                                       LineBreakMode="TailTruncation" />
-
-                                <Border Grid.Row="0"
-                                        Grid.Column="1"
-                                        Style="{StaticResource DashboardBadge}"
-                                        BackgroundColor="{StaticResource PositiveBadgeBackground}"
-                                        HorizontalOptions="End"
-                                        VerticalOptions="Center">
-                                    <Label Text="Connected"
-                                           TextColor="{StaticResource PositiveBadgeText}"
-                                           FontSize="11"
-                                           FontAttributes="Bold" />
-                                </Border>
-
-                                <Border Grid.Row="1"
-                                        Style="{StaticResource DashboardBadge}"
-                                        BackgroundColor="{StaticResource SoftBlue}"
-                                        HorizontalOptions="Start">
-                                    <Label Text="{Binding Sensor.Type}"
-                                           TextColor="{StaticResource TemperatureAccent}"
-                                           FontSize="11"
-                                           FontAttributes="Bold" />
-                                </Border>
-
-                                <Label Grid.Row="2"
-                                       Text="{Binding Sensor.LatestReading}"
-                                       Style="{StaticResource MetricValueLabel}" />
-                            </Grid>
-                        </Border>
-
                         <Label Text="Recent readings"
-                               Style="{StaticResource PageTitleLabel}"
-                               Margin="0,0,0,4" />
+                               Style="{StaticResource PageTitleLabel}" />
                     </VerticalStackLayout>
                 </CollectionView.Header>
 
@@ -123,7 +140,7 @@
                             StrokeThickness="1"
                             StrokeShape="RoundRectangle 12"
                             Padding="32"
-                            Margin="16,16,16,0"
+                            Margin="0,16,0,0"
                             HorizontalOptions="Center">
                         <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
                             <Label Text="--"
@@ -145,7 +162,7 @@
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:Reading">
                         <Border Style="{StaticResource SensorCard}"
-                                Margin="16,0,16,12">
+                                Margin="0,0,0,12">
                             <VisualStateManager.VisualStateGroups>
                                 <VisualStateGroup x:Name="CommonStates">
                                     <VisualState x:Name="Normal" />

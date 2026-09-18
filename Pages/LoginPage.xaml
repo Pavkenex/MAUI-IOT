@@ -7,7 +7,10 @@
              Shell.NavBarIsVisible="False"
              Title="Sign in">
     <ScrollView>
-        <VerticalStackLayout Padding="20,48,20,24" Spacing="18" VerticalOptions="Center">
+        <VerticalStackLayout Padding="20,48,20,24"
+                             Spacing="18"
+                             VerticalOptions="Center"
+                             MaximumWidthRequest="420">
             <VerticalStackLayout Spacing="6">
                 <Label Text="MAUI &amp; IOT"
                        Style="{StaticResource PageTitleLabel}"

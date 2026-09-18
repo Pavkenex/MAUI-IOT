@@ -19,4 +19,10 @@ public interface IApiClient
         IReadOnlyList<ReadingUploadItem> readings,
         string token,
         CancellationToken cancellationToken = default);
+
+    Task<ApiResult<ReadingsResponse>> GetReadingsAsync(
+        string token,
+        string? deviceId = null,
+        int limit = 200,
+        CancellationToken cancellationToken = default);
 }

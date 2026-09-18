@@ -102,9 +102,10 @@
                             </Border>
                         </Grid>
 
-                        <Grid ColumnDefinitions="*,1,*"
-                              ColumnSpacing="16"
+                        <Grid ColumnDefinitions="Auto,1,Auto"
+                              ColumnSpacing="24"
                               RowSpacing="6"
+                              HorizontalOptions="Center"
                               MaximumWidthRequest="{OnIdiom Desktop=1400, Default=100000}">
                             <VerticalStackLayout Spacing="2">
                                 <Label Text="TEMPERATURE" Style="{StaticResource MetricTitleLabel}" />

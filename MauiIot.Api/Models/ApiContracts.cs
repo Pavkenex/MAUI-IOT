@@ -32,6 +32,8 @@ public sealed class ReadingUploadItem
 {
     public string DeviceId { get; set; } = string.Empty;
 
+    public string? DeviceName { get; set; }
+
     public uint BootSessionId { get; set; }
 
     public uint ReadingId { get; set; }
@@ -64,6 +66,8 @@ public sealed class ReadingItem
     public string Id { get; set; } = string.Empty;
 
     public string DeviceId { get; set; } = string.Empty;
+
+    public string? DeviceName { get; set; }
 
     public uint BootSessionId { get; set; }
 

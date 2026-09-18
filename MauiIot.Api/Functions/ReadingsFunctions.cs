@@ -73,6 +73,7 @@ public sealed class ReadingsFunctions
                 Id = CosmosStore.BuildReadingId(userId, item.DeviceId, item.BootSessionId, item.ReadingId),
                 UserId = userId,
                 DeviceId = item.DeviceId,
+                DeviceName = NormalizeDeviceName(item.DeviceName),
                 BootSessionId = item.BootSessionId,
                 ReadingId = item.ReadingId,
                 ElapsedSeconds = item.ElapsedSeconds,
@@ -133,10 +134,22 @@ public sealed class ReadingsFunctions
             cancellationToken);
     }
 
+    private static string? NormalizeDeviceName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return null;
+        }
+
+        var trimmed = name.Trim();
+        return trimmed.Length <= 64 ? trimmed : trimmed[..64];
+    }
+
     private static ReadingItem MapItem(ReadingDocument document) => new()
     {
         Id = document.Id,
         DeviceId = document.DeviceId,
+        DeviceName = document.DeviceName,
         BootSessionId = document.BootSessionId,
         ReadingId = document.ReadingId,
         ElapsedSeconds = document.ElapsedSeconds,

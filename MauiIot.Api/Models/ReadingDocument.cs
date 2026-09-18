@@ -8,6 +8,8 @@ public sealed class ReadingDocument
 
     public string DeviceId { get; set; } = string.Empty;
 
+    public string? DeviceName { get; set; }
+
     public uint BootSessionId { get; set; }
 
     public uint ReadingId { get; set; }

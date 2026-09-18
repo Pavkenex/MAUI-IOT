@@ -71,6 +71,15 @@ namespace MAUI_IOT.PageModels
         }
 
         [RelayCommand]
+        private async Task GoBackAsync()
+        {
+            if (Shell.Current is not null)
+            {
+                await Shell.Current.GoToAsync("..");
+            }
+        }
+
+        [RelayCommand]
         private async Task LoadSensorAsync()
         {
             if (IsBusy)

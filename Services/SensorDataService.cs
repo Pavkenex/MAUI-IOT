@@ -38,10 +38,8 @@ public sealed class SensorDataService : ISensorDataService
         var sensors = new List<SensorSummary>(deviceIds.Count * 2);
         foreach (var deviceId in deviceIds)
         {
-            var storedName = names.TryGetValue(deviceId, out var value) ? value : string.Empty;
-            var name = string.IsNullOrWhiteSpace(storedName)
-                ? $"DHT22 {ShortDeviceId(deviceId)}"
-                : storedName;
+            var storedName = names.TryGetValue(deviceId, out var value) ? value : null;
+            var name = DeviceNameFormatter.ForDevice(deviceId, storedName);
             latestByDevice.TryGetValue(deviceId, out var latest);
             var isOnline = latest is not null;
 
@@ -124,8 +122,4 @@ public sealed class SensorDataService : ISensorDataService
         return null;
     }
 
-    private static string ShortDeviceId(string deviceId)
-    {
-        return deviceId.Length >= 8 ? deviceId[^8..].ToUpperInvariant() : deviceId;
-    }
 }

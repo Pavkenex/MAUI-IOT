@@ -145,9 +145,9 @@ namespace MAUI_IOT.PageModels
             }
 
             var deviceId = latest.DeviceId;
-            var deviceName = deviceNames.TryGetValue(deviceId, out var name) && !string.IsNullOrWhiteSpace(name)
-                ? name
-                : deviceId;
+            var deviceName = DeviceNameFormatter.ForDevice(
+                deviceId,
+                deviceNames.TryGetValue(deviceId, out var name) ? name : null);
 
             LatestDeviceId = deviceId;
             LatestDeviceName = deviceName;
@@ -172,9 +172,9 @@ namespace MAUI_IOT.PageModels
             var points = located.Select(reading => new MapPoint(
                 reading.Latitude!.Value,
                 reading.Longitude!.Value,
-                names.TryGetValue(reading.DeviceId, out var name) && !string.IsNullOrWhiteSpace(name)
-                    ? name
-                    : reading.DeviceId,
+                DeviceNameFormatter.ForDevice(
+                    reading.DeviceId,
+                    names.TryGetValue(reading.DeviceId, out var name) ? name : null),
                 reading.DeviceId,
                 $"{reading.TemperatureCelsius:F1}°C",
                 $"{reading.HumidityPercent:F1}%",

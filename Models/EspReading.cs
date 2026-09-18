@@ -35,4 +35,7 @@ public sealed class EspReading
     public bool IsUploaded { get; set; }
 
     public DateTimeOffset? UploadedAtUtc { get; set; }
+
+    [Ignore]
+    public string? DeviceName { get; set; }
 }

@@ -95,6 +95,19 @@ public sealed class EspReadingRepository : IEspReadingRepository
             }
         }
 
+        foreach (var device in readings
+            .Where(r => !string.IsNullOrWhiteSpace(r.DeviceName))
+            .GroupBy(r => r.DeviceId, StringComparer.OrdinalIgnoreCase)
+            .Select(g => new EspDeviceRecord
+            {
+                DeviceId = g.Key,
+                Name = g.First().DeviceName!,
+                LastSeenAtUtc = DateTimeOffset.UtcNow,
+            }))
+        {
+            await SaveDeviceAsync(device);
+        }
+
         return imported;
     }
 

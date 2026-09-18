@@ -88,9 +88,9 @@ public partial class TrendChartModel : ObservableObject
         {
             var reading = readingsOldestFirst[index];
             var localTime = reading.RecordedAtUtc.ToLocalTime().DateTime;
-            var deviceName = deviceNames.TryGetValue(reading.DeviceId, out var name) && !string.IsNullOrWhiteSpace(name)
-                ? name
-                : reading.DeviceId;
+            var deviceName = DeviceNameFormatter.ForDevice(
+                reading.DeviceId,
+                deviceNames.TryGetValue(reading.DeviceId, out var name) ? name : null);
 
             _slotLabels[index] = localTime.ToString("HH:mm");
 

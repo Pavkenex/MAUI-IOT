@@ -71,7 +71,8 @@ public sealed class ReadingUploadService
                     var pending = await _repository.GetPendingUploadsAsync(BatchSize);
                     if (pending.Count > 0)
                     {
-                        var items = pending.Select(Map).ToList();
+                        var deviceNames = await GetDeviceNamesAsync();
+                        var items = pending.Select(reading => Map(reading, deviceNames)).ToList();
                         var result = await _api.UploadReadingsAsync(items, token, cancellationToken);
 
                         if (result.Success)
@@ -109,9 +110,22 @@ public sealed class ReadingUploadService
         }
     }
 
-    private static ReadingUploadItem Map(EspReading reading) => new()
+    private async Task<IReadOnlyDictionary<string, string>> GetDeviceNamesAsync()
+    {
+        var devices = await _repository.GetDevicesAsync();
+        var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var device in devices)
+        {
+            names[device.DeviceId] = device.Name;
+        }
+
+        return names;
+    }
+
+    private static ReadingUploadItem Map(EspReading reading, IReadOnlyDictionary<string, string> deviceNames) => new()
     {
         DeviceId = reading.DeviceId,
+        DeviceName = deviceNames.TryGetValue(reading.DeviceId, out var name) ? name : null,
         BootSessionId = reading.BootSessionId,
         ReadingId = reading.ReadingId,
         ElapsedSeconds = reading.ElapsedSeconds,

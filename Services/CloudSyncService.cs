@@ -200,6 +200,7 @@ public sealed class CloudSyncService
     private static EspReading MapCloudReading(ReadingListItem item) => new()
     {
         DeviceId = item.DeviceId,
+        DeviceName = item.DeviceName,
         BootSessionId = item.BootSessionId,
         ReadingId = item.ReadingId,
         ElapsedSeconds = item.ElapsedSeconds,
